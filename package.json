@@ -1,0 +1,24 @@
+{
+  "name": "dazv",
+  "version": "1.0.0",
+  "description": "canvas data visualization",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chengquan223/Dazv.git"
+  },
+  "keywords": [
+    "canvas",
+    "visualization",
+    "chart"
+  ],
+  "author": "309581454@qq.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chengquan223/Dazv/issues"
+  },
+  "homepage": "https://github.com/chengquan223/Dazv#readme"
+}
