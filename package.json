@@ -2,13 +2,15 @@
   "name": "dazv",
   "version": "1.0.0",
   "description": "canvas data visualization",
-  "main": "index.js",
+  "main": "build/dazv.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "mini":"npm run build && uglifyjs build/dazv.js -c -m -o build/dazv.min.js",
+    "build": "rollup -c",
+    "watch":"npm-watch"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chengquan223/Dazv.git"
+    "url": "git+https://github.com/chengquan223/dazv.git"
   },
   "keywords": [
     "canvas",
@@ -18,7 +20,14 @@
   "author": "309581454@qq.com",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/chengquan223/Dazv/issues"
+    "url": "https://github.com/chengquan223/dazv/issues"
   },
-  "homepage": "https://github.com/chengquan223/Dazv#readme"
+  "homepage": "https://github.com/chengquan223/dazv#readme",
+  "devDependencies": {
+    "babel-preset-es2015-rollup": "^1.2.0",
+    "npm-watch": "^0.1.6",
+    "rollup": "^0.36.3",
+    "rollup-plugin-babel": "^2.6.1",
+    "uglify-js": "^2.7.4"
+  }
 }

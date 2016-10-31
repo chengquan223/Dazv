@@ -1,0 +1,3 @@
+{
+  "presets": [["es2015", {"modules": false}]] //注意{ "modules": false }一定要有，否则一直报错,If you're using the "es2015" preset, consider using "es2015-rollup" 
+}
