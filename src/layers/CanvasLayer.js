@@ -7,6 +7,9 @@ function CanvasLayer(options) {
     options = options || {};
     self.options = options;
     self.init();
+
+    //创建canvas,将canvas添加到div中,去参考echart,https://github.com/ecomfe/echarts
+    var canvas = slef.canvas = document.createElement('canvas');
 }
 
 CanvasLayer.prototype.init = function () {
@@ -21,3 +24,5 @@ CanvasLayer.prototype.init = function () {
     });
     self.choropleth = new Choropleth(legendCfg.splitList);
 }
+
+CanvasLayer.prototype.
