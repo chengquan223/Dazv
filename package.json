@@ -8,6 +8,16 @@
     "build": "rollup -c",
     "watch":"npm-watch"
   },
+  "watch": {
+    "build": {
+      "patterns": [
+        "src",
+        "index.js"
+      ],
+      "extensions": "js,jsx",
+      "ignore": ""
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/chengquan223/dazv.git"

@@ -5,12 +5,7 @@
         end: 50,
         color: '#00E400',
         level: '优'
-    }, {
-        start: 50,
-        end: 100,
-        color: '#FFFF00',
-        level: '良'
- }];
+    }];
  */
 function Choropleth(splitList) {
     this.splitList = splitList || {};
