@@ -24,5 +24,3 @@ CanvasLayer.prototype.init = function () {
     });
     self.choropleth = new Choropleth(legendCfg.splitList);
 }
-
-CanvasLayer.prototype.
