@@ -1,6 +1,7 @@
 var defaults = {
     width: 1000,
     height: 500,
+    fontFamily: '"Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", SimSun, "sans-serif"',
     viewCfg: {
         margin: [20, 60, 60, 60]
     },
@@ -102,3 +103,5 @@ var defaults = {
         style: 'position:absolute;background-Color:rgba(0,0,0,0.7);transition:top 0.2s,left 0.2s;border-radius: 2px;color:#fff;line-height: 16px;padding:5px 10px;'
     }
 };
+
+export default defaults;

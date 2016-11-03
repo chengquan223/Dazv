@@ -26,15 +26,12 @@
 <body>
 	<div id="container">
 		<div id="calendar">
-			<div id="davz-chart" style="position: relative;">
-				<canvas id="canvas_1" width="1000" height="500" style="width: 1000px; height: 500px;"></canvas>
-				<canvas id="canvas_2" width="1000" height="500" style="width: 1000px; height: 500px; position: absolute; top: 0px; left: 0px;"></canvas>
-				<canvas id="canvas_3" width="1000" height="500" style="width: 1000px; height: 500px; position: absolute; top: 0px; left: 0px;"></canvas>
-			</div>
 		</div>
 	</div>
 	<script type="text/javascript" src="../build/dazv.js"></script>
 	<script>
+		
+		var dazv=new Dazv.Chart({id:'calendar',width:1000,height:500});
         console.log(dazv);
     </script>
 </body>

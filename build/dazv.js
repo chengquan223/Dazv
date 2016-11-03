@@ -1,139 +1,10 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
-    (factory((global.dazv = global.dazv || {})));
+    (factory((global.Dazv = global.Dazv || {})));
 }(this, (function (exports) { 'use strict';
 
 var version = "1.0.0";
-
-/**
- * 调色板
- */
-function Palette(options) {
-    options = options || {};
-    this.gradient = options.gradient || {
-        0.1: '#DF5A5A',
-        0.2: '#DF775A',
-        0.3: '#DF945A',
-        0.4: '#DFB05A',
-        0.5: '#DFCD5A',
-        0.6: '#D4DF5A',
-        0.7: '#B7DF5A',
-        0.8: '#9ADF5A',
-        0.9: '#7DDF5A',
-        1.0: '#61DF5A'
-    };
-    this.width = options.width || 1;
-    this.height = options.height || 256;
-    this.min = options.min || 0;
-    this.max = options.max || 300;
-    this.init();
-}
-
-Palette.prototype.init = function () {
-    var gradient = this.gradient;
-    var paletteCanvas = document.createElement('canvas');
-    paletteCanvas.width = this.width;
-    paletteCanvas.height = this.height;
-    var paletteCtx = this.paletteCtx = paletteCanvas.getContext('2d');
-    var lineGradient = paletteCtx.createLinearGradient(0, 0, paletteCanvas.width, paletteCanvas.height);
-    for (var key in gradient) {
-        lineGradient.addColorStop(parseFloat(key), gradient[key]);
-    }
-    paletteCtx.fillStyle = lineGradient;
-    paletteCtx.fillRect(0, 0, paletteCanvas.width, paletteCanvas.height);
-};
-
-Palette.prototype.getImageData = function () {
-    return this.paletteCtx.getImageData(0, 0, this.width, this.height);
-};
-
-Palette.prototype.getColor = function (value) {
-    var max = this.max;
-    if (value > max) {
-        max = value;
-    }
-    var index = Math.floor(value / max * this.height) * 4;
-    var imageData = this.getImageData();
-    return "rgba(" + imageData[index] + ", " + imageData[index + 1] + ", " + imageData[index + 2] + ", " + imageData[index + 3] / 256 + ")";
-};
-
-var dataRange = {
-    drawDataRange: function drawDataRange() {
-        var canvasFore = document.getElementById('canvas_3');
-        var ctxFore = canvasFore.getContext('2d');
-        var palette = new Palette();
-        ctxFore.putImageData(palette.getImageData(), 10, 10);
-    }
-};
-
-/**
- * ToolTip消息框
- */
-function ToolTip(container, options) {
-    var self = this;
-    var dom = document.createElement('div');
-    options = options || {};
-    self.dom = dom;
-    this._x = 0;
-    this._y = 0;
-    self.options = options;
-    container.appendChild(dom);
-    self.container = container;
-    self._show = false;
-}
-
-ToolTip.prototype.update = function () {
-    var domStyle = this.container.style;
-    if (domStyle.position !== 'absolute') {
-        domStyle.position = 'relative';
-    }
-};
-
-ToolTip.prototype.show = function () {
-    var dom = this.dom;
-    dom.style.cssText = this.options.style + ';left:' + this._x + 'px;top:' + this._y + 'px';
-    dom.style.display = dom.innerHTML ? 'block' : 'none';
-    this._show = true;
-};
-
-ToolTip.prototype.setContent = function (content) {
-    var dom = this.dom;
-    dom.innerHTML = content;
-    dom.style.display = content ? 'block' : 'none';
-};
-
-ToolTip.prototype.moveTo = function (x, y) {
-    var style = this.dom.style;
-    style.left = x + 'px';
-    style.top = y + 'px';
-    this._x = x;
-    this._y = y;
-};
-
-ToolTip.prototype.hide = function () {
-    this.dom.style.display = 'none';
-    this._show = false;
-};
-
-ToolTip.prototype.hideLater = function (time) {
-    var self = this;
-    if (self._show) {
-        if (time) {
-            self._hideDelay = time;
-            self._show = false;
-            self._hideTimeout = setTimeout(function () {
-                self.hide();
-            }, time);
-        } else {
-            self.hide();
-        }
-    }
-};
-
-ToolTip.prototype.isShow = function () {
-    return this._show;
-};
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
@@ -232,13 +103,65 @@ function isArray(value) {
     return objToString.call(value) === '[object Array]';
 }
 
+function guid(id) {
+    var t = {};
+    id = id || 'v';
+    return t[id] ? t[id] += 1 : t[id] = 1, id + t[id];
+}
+
+function createDiv() {
+    return document.createElement('div');
+}
+
+function toArray(obj) {
+    return obj && obj.length ? Array.prototype.slice.call(obj) : [];
+}
+
+function mix() {
+    var t = this.toArray(arguments),
+        newObj = t[0];
+    if (newObj === !0) {
+        newObj = t[1];
+        for (var i = 2; i < t.length; i++) {
+            var item = t[i];
+            combine(newObj, item);
+        }
+    } else {
+        for (var i = 1; i < t.length; i++) {
+            var item = t[i];
+            for (var a in item) {
+                item.hasOwnProperty(a) && "constructor" !== a && (newObj[a] = item[a]);
+            }
+        }
+        return newObj;
+    }
+}
+
+function combine(dest, source, r) {
+    var a = 5;
+    r = r || 0;
+    for (var i in source) {
+        if (source.hasOwnProperty(i)) {
+            var o = source[i];
+            null !== o && s.isObject(o) ? (s.isObject(dest[i]) || (dest[i] = {}), r < a ? n(dest[i], source[i], r + 1) : dest[i] = source[i]) : s.isArray(o) ? (dest[i] = [], dest[i] = dest[i].concat(o)) : void 0 !== o && (dest[i] = source[i]);
+        }
+    }
+}
+
 var util = {
     clone: clone,
     merge: merge,
-    inherits: inherits
+    inherits: inherits,
+    guid: guid,
+    createDiv: createDiv,
+    mix: mix,
+    toArray: toArray
 };
 
-var coordOption = {
+var defaults = {
+    width: 1000,
+    height: 500,
+    fontFamily: '"Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", SimSun, "sans-serif"',
     viewCfg: {
         margin: [20, 60, 60, 60]
     },
@@ -264,20 +187,182 @@ var coordOption = {
         cols: 31, //列
         space: 0, //间距
         isIntersect: true //网格背景交叉
+    },
+    legend: {
+        show: true,
+        type: 'piecewise', //continuous,piecewise 连续,分段
+        min: 0,
+        max: 300,
+        width: 13,
+        height: 180,
+        textGap: 10, //两端文字间距离
+        selectedMode: 'multiple', //multiple,single 多选,单选
+        itemSymbol: 'circle', //circle,rect,roundRect
+        itemWidth: 20,
+        itemHeight: 10,
+        itemGap: 14,
+        wordSpaceing: 8, //marker与文字间距离
+        left: 16, //左侧图表距离
+        bottom: 5, //右侧图表距离
+        calculable: true, //是否启用值域漫游，当piecewise时有效，值域显示为线性渐变
+        textStyle: {
+            fontSize: 12,
+            fontFamily: '"Microsoft YaHei", "微软雅黑", SimSun, "sans-serif"',
+            color: '#3c3c3c'
+        },
+        gradient: {
+            0.1: '#fe0000',
+            0.2: '#ff3801',
+            0.3: '#ff7300',
+            0.4: '#ffaa01',
+            0.5: '#fae200',
+            0.6: '#e5f500',
+            0.7: '#b0e000',
+            0.8: '#84cf00',
+            0.9: '#5aba00',
+            1.0: '#38a702'
+        },
+        splitList: [{
+            start: 0,
+            end: 50,
+            color: '#00E400',
+            level: '优'
+        }, {
+            start: 50,
+            end: 100,
+            color: '#FFFF00',
+            level: '良'
+        }, {
+            start: 100,
+            end: 150,
+            color: '#FF7E00',
+            level: '轻度污染'
+        }, {
+            start: 150,
+            end: 200,
+            color: '#FF0000',
+            level: '中度污染'
+        }, {
+            start: 200,
+            end: 300,
+            color: '#99004C',
+            level: '重度污染'
+        }, {
+            start: 300,
+            color: '#7E0023',
+            level: '严重污染'
+        }]
+    },
+    toolTip: {
+        show: true,
+        position: [5, 5],
+        triggerOn: 'mousemove', //触发条件mousemove，click
+        style: 'position:absolute;background-Color:rgba(0,0,0,0.7);transition:top 0.2s,left 0.2s;border-radius: 2px;color:#fff;line-height: 16px;padding:5px 10px;'
     }
 };
 
-console.log(coordOption);
-var newObj = util.clone({ a: 1 });
-dataRange.drawDataRange();
-var tooltipCfg = { position: [5, 5], style: 'position:absolute;background-Color:rgba(0,0,0,0.7);transition:top 0.2s,left 0.2s;border-radius: 2px;color:#fff;line-height: 16px;padding:5px 10px;' };
-var toolTip = new ToolTip(document.getElementById('davz-chart'), tooltipCfg);
-toolTip.moveTo(15, 0);
-toolTip.setContent('消息提示框');
-toolTip.show();
-toolTip.hideLater(600);
+function CanvasLayer(options) {
+    this.width = options.width;
+    this.height = options.height;
+    this.containerDOM = options.containerDOM;
+    this.capture = options.capture;
+    this.init();
+}
+
+CanvasLayer.prototype.init = function () {
+    var count = this.containerDOM.childNodes.length;
+    var canvasDOM = document.createElement('canvas'),
+        context = canvasDOM.getContext('2d');
+    canvasDOM.width = this.width;
+    canvasDOM.height = this.height;
+    canvasDOM.style.width = this.width + 'px';
+    canvasDOM.style.height = this.height + 'px';
+    canvasDOM.id = 'canvas_' + (count + 1);
+    this.containerDOM.appendChild(canvasDOM);
+    this.canvasDOM = canvasDOM;
+    this.context = context;
+};
+
+CanvasLayer.prototype.addTopLeft = function () {
+    var el = this.canvasDOM;
+    el.style.position = 'absolute';
+    el.style.top = 0;
+    el.style.left = 0;
+};
+
+/**
+ * 调色板
+ */
+
+/**
+ * 值域
+ var splitList = [{
+        start: 0,
+        end: 50,
+        color: '#00E400',
+        level: '优'
+    }];
+ */
+
+function Chart(options) {
+    initContainer(options);
+}
+
+Chart.prototype.init = function () {};
+
+function initContainer(options) {
+    var viewCfg = util.mix({}, defaults.viewCfg, options.viewCfg),
+        container = createContainer(options);
+    options.viewCfg = viewCfg, options.container = container, options = options;
+    initOptions(options);
+    console.log(options);
+}
+
+function createContainer(options) {
+    var id = options.id,
+        dom = document.getElementById(id),
+        container = options.container;
+    if (!dom && !container) {
+        throw new Error("please specify the canvas container Id !");
+    }
+    if (dom && container) {
+        throw new Error('please specify the "container" or "id" property !');
+    }
+    if (!container) {
+        var containerid = util.guid('v-chart');
+        container = util.createDiv(), container.id = containerid, container.style.position = 'relative', dom.appendChild(container);
+    }
+    return container;
+}
+
+function createCanvasLayer(options, capture) {
+    var canvasLayer = new CanvasLayer(options);
+    if (capture) {
+        canvasLayer.addTopLeft();
+    }
+    canvasLayer['fontFamily'] = defaults.fontFamily;
+    return canvasLayer;
+}
+
+function initOptions(options) {
+    var w = options.width,
+        h = options.height,
+        c = options.container,
+        canvasOpt = {
+        width: w,
+        height: h,
+        containerDOM: c,
+        capture: false
+    },
+        c1 = createCanvasLayer(canvasOpt, false),
+        c2 = createCanvasLayer(canvasOpt, true),
+        c3 = createCanvasLayer(canvasOpt, true);
+    options.backCanvas = c1, options.midCanvas = c1, options.foreCanvas = c3;
+    return options;
+}
 
 exports.version = version;
+exports.Chart = Chart;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
