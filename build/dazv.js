@@ -311,9 +311,10 @@ function Chart(options) {
 Chart.prototype.init = function () {};
 
 function initContainer(options) {
-    var viewCfg = util.mix({}, defaults.viewCfg, options.viewCfg),
-        container = createContainer(options);
-    options.viewCfg = viewCfg, options.container = container, options = options;
+    var viewCfg = util.mix({}, defaults.viewCfg, options.viewCfg);
+    var container = createContainer(options);
+    options.viewCfg = viewCfg;
+    options.container = container;
     initOptions(options);
     console.log(options);
 }
@@ -330,7 +331,10 @@ function createContainer(options) {
     }
     if (!container) {
         var containerid = util.guid('v-chart');
-        container = util.createDiv(), container.id = containerid, container.style.position = 'relative', dom.appendChild(container);
+        container = util.createDiv();
+        container.id = containerid;
+        container.style.position = 'relative';
+        dom.appendChild(container);
     }
     return container;
 }

@@ -19,6 +19,8 @@ function initContainer(options) {
     options.viewCfg = viewCfg;
     options.container = container;
     initOptions(options);
+    var backCanvas = options.backCanvas;
+    options.viewRange = 1;
     console.log(options);
 }
 
