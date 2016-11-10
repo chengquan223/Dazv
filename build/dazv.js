@@ -83,6 +83,27 @@ var defaults = {
             value: 5 },
         titleOffset: 42, //标题距离坐标轴的距离
         lableOffset: 10, //文本距离坐标轴的距离
+        grid: {
+            line: {
+                lineWidth: 1,
+                stroke: '#d9d9d9'
+            }
+        },
+        gridAlign: 'start', //栅格的位置跟坐标点(tick)的对齐方式，当前仅支持 start和middle
+        xAxis: {
+            type: '',
+            name: '日期（day）',
+            max: 31,
+            showLine: false,
+            minInterval: 1
+        },
+        yAxis: {
+            type: '',
+            name: '月份（month）',
+            max: 12,
+            showLine: false,
+            minInterval: 1
+        },
         rows: 12, //行
         cols: 31, //列
         space: 0, //间距
