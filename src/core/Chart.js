@@ -1,73 +1,49 @@
 import util from '../tool/util';
 import defaults from '../config';
+import createContainer from './container';
 import CanvasLayer from '../core/layer/CanvasLayer';
-import Palette from '../core/data-range/Palette';
-import Choropleth from '../core/data-range/Choropleth';
-
+import View from '../core/coord/View';
+import Legend from '../core/legend/Legend';
 
 function Chart(options) {
-    initContainer(options);
+    var self = this;
+    options = options || {};
+    self.options = util.mix({}, defaults, options);
+    self.init();
 }
 
 Chart.prototype.init = function () {
-
+    var self = this;
+    var options = self.options;
+    self.container = createContainer(options);
+    var backCanvas = self.backCanvas = createCanvasLayer(options, false);
+    self.midCanvas = createCanvasLayer(options, true);
+    self.foreCanvas = createCanvasLayer(options, true);
+    var view = self.view = new View({
+        width: options.width,
+        height: options.height,
+        margin: options.viewCfg.margin
+    });
+    var legend = self.legend = new Legend(options.legendCfg, view);
+    view.drawLine(self.backCanvas.context); //测试
+    legend.draw(backCanvas.context);
 }
 
-function initContainer(options) {
-    var viewCfg = util.mix({}, defaults.viewCfg, options.viewCfg);
-    var container = createContainer(options);
-    options.viewCfg = viewCfg;
-    options.container = container;
-    initOptions(options);
-    var backCanvas = options.backCanvas;
-    options.viewRange = 1;
-    console.log(options);
-}
-
-function createContainer(options) {
-    var id = options.id,
-        dom = document.getElementById(id),
-        container = options.container;
-    if (!dom && !container) {
-        throw new Error("please specify the canvas container Id !");
-    }
-    if (dom && container) {
-        throw new Error('please specify the "container" or "id" property !');
-    }
-    if (!container) {
-        var containerid = util.guid('v-chart');
-        container = util.createDiv();
-        container.id = containerid;
-        container.style.position = 'relative';
-        dom.appendChild(container);
-    }
-    return container;
+Chart.prototype.get = function (name) {
+    return this[name];
 }
 
 function createCanvasLayer(options, capture) {
-    var canvasLayer = new CanvasLayer(options);
+    var canvasLayer = new CanvasLayer({
+        width: options.width,
+        height: options.height,
+        container: options.container,
+        fontFamily: options.fontFamily
+    });
     if (capture) {
         canvasLayer.addTopLeft();
     }
-    canvasLayer['fontFamily'] = defaults.fontFamily;
     return canvasLayer;
-}
-
-function initOptions(options) {
-    var w = options.width,
-        h = options.height,
-        c = options.container,
-        canvasOpt = {
-            width: w,
-            height: h,
-            containerDOM: c,
-            capture: false,
-        },
-        c1 = createCanvasLayer(canvasOpt, false),
-        c2 = createCanvasLayer(canvasOpt, true),
-        c3 = createCanvasLayer(canvasOpt, true);
-    options.backCanvas = c1, options.midCanvas = c1, options.foreCanvas = c3;
-    return options;
 }
 
 export default Chart;

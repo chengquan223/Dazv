@@ -6,103 +6,6 @@
 
 var version = "1.0.0";
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-// 用于处理merge时无法遍历Date等对象的问题
-var BUILTIN_OBJECT = {
-    '[object Function]': 1,
-    '[object RegExp]': 1,
-    '[object Date]': 1,
-    '[object Error]': 1,
-    '[object CanvasGradient]': 1,
-    '[object CanvasPattern]': 1,
-    // In node-canvas Image can be Canvas.Image
-    '[object Image]': 1
-};
-
-var objToString = Object.prototype.toString;
-
-function clone(source) {
-    if ((typeof source === 'undefined' ? 'undefined' : _typeof(source)) == 'object' && source !== null) {
-        var result = source;
-        if (source instanceof Array) {
-            result = [];
-            for (var i = 0, len = source.length; i < len; i++) {
-                result[i] = clone(source[i]);
-            }
-        } else if (!isBuildInObject(source)
-        // 是否为 dom 对象
-        && !isDom(source)) {
-            result = {};
-            for (var key in source) {
-                if (source.hasOwnProperty(key)) {
-                    result[key] = clone(source[key]);
-                }
-            }
-        }
-        return result;
-    }
-    return source;
-}
-
-function merge(target, source, overwrite) {
-    // We should escapse that source is string
-    // and enter for ... in ...
-    if (!isObject(source) || !isObject(target)) {
-        return overwrite ? clone(source) : target;
-    }
-    for (var key in source) {
-        if (source.hasOwnProperty(key)) {
-            var targetProp = target[key];
-            var sourceProp = source[key];
-            if (isObject(sourceProp) && isObject(targetProp) && !isArray(sourceProp) && !isArray(targetProp) && !isDom(sourceProp) && !isDom(targetProp) && !isBuildInObject(sourceProp) && !isBuildInObject(targetProp)) {
-                // 如果需要递归覆盖，就递归调用merge
-                merge(targetProp, sourceProp, overwrite);
-            } else if (overwrite || !(key in target)) {
-                // 否则只处理overwrite为true，或者在目标对象中没有此属性的情况
-                // NOTE，在 target[key] 不存在的时候也是直接覆盖
-                target[key] = clone(source[key], true);
-            }
-        }
-    }
-    return target;
-}
-
-/**
- * 构造类继承关系
- */
-function inherits(clazz, baseClazz) {
-    var clazzPrototype = clazz.prototype;
-
-    function F() {}
-    F.prototype = baseClazz.prototype;
-    clazz.prototype = new F();
-    for (var prop in clazzPrototype) {
-        clazz.prototype[prop] = clazzPrototype[prop];
-    }
-    clazz.prototype.constructor = clazz;
-    clazz.superClass = baseClazz;
-}
-
-function isBuildInObject(value) {
-    return !!BUILTIN_OBJECT[objToString.call(value)];
-}
-
-function isObject(value) {
-    // Avoid a V8 JIT bug in Chrome 19-20.
-    // See https://code.google.com/p/v8/issues/detail?id=2291 for more details.
-    var type = typeof value === 'undefined' ? 'undefined' : _typeof(value);
-    return type === 'function' || !!value && type == 'object';
-}
-
-function isDom(value) {
-    return value && value.nodeType === 1 && typeof value.nodeName == 'string';
-}
-
-function isArray(value) {
-    return objToString.call(value) === '[object Array]';
-}
-
 function guid(id) {
     var t = {};
     id = id || 'v';
@@ -149,9 +52,6 @@ function combine(dest, source, r) {
 }
 
 var util = {
-    clone: clone,
-    merge: merge,
-    inherits: inherits,
     guid: guid,
     createDiv: createDiv,
     mix: mix,
@@ -188,7 +88,7 @@ var defaults = {
         space: 0, //间距
         isIntersect: true //网格背景交叉
     },
-    legend: {
+    legendCfg: {
         show: true,
         type: 'piecewise', //continuous,piecewise 连续,分段
         min: 0,
@@ -197,7 +97,7 @@ var defaults = {
         height: 180,
         textGap: 10, //两端文字间距离
         selectedMode: 'multiple', //multiple,single 多选,单选
-        itemSymbol: 'circle', //circle,rect,roundRect
+        itemSymbol: 'roundRect', //circle,rect,roundRect
         itemWidth: 20,
         itemHeight: 10,
         itemGap: 14,
@@ -261,11 +161,31 @@ var defaults = {
     }
 };
 
+function createContainer(options) {
+    var id = options.id;
+    var dom = document.getElementById(id);
+    var container;
+    if (!dom && !container) {
+        throw new Error("please specify the canvas container Id !");
+    }
+    if (dom && container) {
+        throw new Error('please specify the "container" or "id" property !');
+    }
+    if (!container) {
+        var containerid = util.guid('v-chart');
+        options.container = container = util.createDiv();
+        container.id = containerid;
+        container.style.position = 'relative';
+        dom.appendChild(container);
+    }
+    return container;
+}
+
 function CanvasLayer(options) {
     this.width = options.width;
     this.height = options.height;
-    this.containerDOM = options.containerDOM;
-    this.capture = options.capture;
+    this.containerDOM = options.container;
+    this.fontFamily = options.fontFamily;
     this.init();
 }
 
@@ -273,11 +193,11 @@ CanvasLayer.prototype.init = function () {
     var count = this.containerDOM.childNodes.length;
     var canvasDOM = document.createElement('canvas'),
         context = canvasDOM.getContext('2d');
+    canvasDOM.id = 'canvas_' + (count + 1);
     canvasDOM.width = this.width;
     canvasDOM.height = this.height;
     canvasDOM.style.width = this.width + 'px';
     canvasDOM.style.height = this.height + 'px';
-    canvasDOM.id = 'canvas_' + (count + 1);
     this.containerDOM.appendChild(canvasDOM);
     this.canvasDOM = canvasDOM;
     this.context = context;
@@ -290,79 +210,304 @@ CanvasLayer.prototype.addTopLeft = function () {
     el.style.left = 0;
 };
 
+function View(options) {
+    var margin = options.margin;
+    this.start = {
+        x: margin[3],
+        y: margin[0]
+    };
+    this.end = {
+        x: options.width - margin[1],
+        y: options.height - margin[2]
+    };
+    this.width = this.end.x - this.start.x;
+    this.height = this.end.y - this.start.y;
+}
+
+View.prototype.drawLine = function (context) {
+    var offset = .5;
+    context.strokeStyle = '#eee';
+    context.beginPath();
+    context.moveTo(this.start.x + offset, this.start.y + offset);
+    context.lineTo(this.end.x + offset, this.start.y + offset);
+    context.lineTo(this.end.x + offset, this.end.y + offset);
+    context.lineTo(this.start.x + offset, this.end.y + offset);
+    context.lineTo(this.start.x + offset, this.start.y + offset);
+    context.stroke();
+};
+
 /**
  * 调色板
  */
+function Palette(options) {
+    options = options || {};
+    this.gradient = options.gradient || {
+        0.1: '#fe0000',
+        0.4: '#ffaa01',
+        0.7: '#b0e000',
+        1.0: '#38a702'
+    };
+    this.width = options.width || 1;
+    this.height = options.height || 256;
+    this.min = options.min || 0;
+    this.max = options.max || 300;
+    this.init();
+}
+
+Palette.prototype.init = function () {
+    var gradient = this.gradient;
+    var canvas = document.createElement('canvas');
+    canvas.width = this.width;
+    canvas.height = this.height;
+    var context = this.context = canvas.getContext('2d');
+    var lineGradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+    for (var key in gradient) {
+        lineGradient.addColorStop(parseFloat(key), gradient[key]);
+    }
+    context.fillStyle = lineGradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+};
+
+Palette.prototype.getImageData = function () {
+    return this.context.getImageData(0, 0, this.width, this.height);
+};
+
+Palette.prototype.getColor = function (value) {
+    var max = this.max;
+    if (value > max) {
+        max = value;
+    }
+    var index = Math.floor((max - value) / max * (this.height - 1)) * 4;
+    var imageData = this.context.getImageData(0, 0, 1, this.height).data; //this.width会获取整个调色板data
+    return "rgba(" + imageData[index] + ", " + imageData[index + 1] + ", " + imageData[index + 2] + ", 1)";
+};
 
 /**
  * 值域
- var splitList = [{
-        start: 0,
-        end: 50,
-        color: '#00E400',
-        level: '优'
-    }];
  */
+function Choropleth(options) {
+    this.options = options;
+    this.splitList = options.splitList || {};
+    this.type = options.type || 'continuous';
+    this.calculable = options.calculable;
+    this.init();
+}
+
+Choropleth.prototype.init = function () {
+    if (this.type == 'piecewise' && this.calculable) {
+        var palette = new Palette(this.options);
+        var splitList = this.splitList;
+        for (var i = 0; i < splitList.length; i++) {
+            splitList[i].color = palette.getColor(splitList[i].start);
+        }
+    }
+};
+
+Choropleth.prototype.get = function (count) {
+    var splitList = this.splitList;
+    var split = false;
+    for (var i = 0; i < splitList.length; i++) {
+        if ((splitList[i].start === undefined || splitList[i].start !== undefined && count > splitList[i].start) && (splitList[i].end === undefined || splitList[i].end !== undefined && count <= splitList[i].end)) {
+            split = splitList[i];
+            break;
+        }
+    }
+    return split;
+};
+
+function Legend(options, view) {
+    this.options = options;
+    this.init(view);
+}
+
+Legend.prototype.init = function (view) {
+    var options = this.options;
+    this.start = {
+        x: view.end.x + options.left,
+        y: view.end.y - options.bottom - options.height - options.textGap
+    };
+    this.end = {
+        x: view.end.x + options.left + options.width,
+        y: view.end.y - options.bottom - options.textGap
+    };
+};
+
+Legend.prototype.draw = function (context) {
+    if (this.options.show) {
+        switch (this.options.type) {
+            case 'piecewise':
+                this.drawByPieceWise(context);
+                break;
+            default:
+                this.drawByContinuous(context);
+                break;
+        }
+    }
+};
+
+Legend.prototype.drawByContinuous = function (context) {
+    var options = this.options;
+    //调色板
+    var palette = new Palette({
+        width: options.width,
+        height: options.height,
+        min: options.min,
+        max: options.max,
+        gradient: options.gradient
+    });
+    context.putImageData(palette.getImageData(), this.start.x, this.start.y);
+    context.save();
+    context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+    context.fillStyle = options.textStyle.color;
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText(options.max, this.start.x + options.width / 2, this.start.y - options.textGap);
+    context.fillText(options.min, this.start.x + options.width / 2, this.end.y + options.textGap);
+    context.restore();
+};
+
+Legend.prototype.drawByPieceWise = function (context) {
+    var choropleth = new Choropleth(this.options);
+    switch (this.options.itemSymbol) {
+        case 'circle':
+            this.drawCircle(context);
+            break;
+        case 'rect':
+            this.drawRect(context);
+            break;
+        case 'roundRect':
+            this.drawRoundRect(context);
+            break;
+        default:
+            break;
+    }
+};
+
+Legend.prototype.drawCircle = function (context) {
+    var options = this.options;
+    var radius = options.itemHeight / 2;
+    for (var i = 0; i < options.splitList.length; i++) {
+        var item = options.splitList[i];
+        var itemX = this.start.x + radius;
+        var itemY = this.end.y - options.itemHeight * i - options.itemGap * i - radius;
+        context.fillStyle = item.color;
+        context.beginPath();
+        context.arc(itemX, itemY, radius, 0, Math.PI * 2, true);
+        context.closePath();
+        context.fill();
+
+        context.save();
+        context.textAlign = 'left';
+        context.textBaseline = "middle";
+        context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+        context.fillStyle = options.textStyle.color;
+        context.fillText(item.level, itemX + radius + options.wordSpaceing, itemY);
+        context.restore();
+    }
+};
+
+Legend.prototype.drawRect = function (context) {
+    var options = this.options;
+    var radius = options.itemHeight / 2;
+    for (var i = 0; i < options.splitList.length; i++) {
+        var item = options.splitList[i];
+        var itemX = this.start.x;
+        var itemY = this.end.y - options.itemHeight * (i + 1) - options.itemGap * i;
+        context.fillStyle = item.color;
+        context.fillRect(itemX, itemY, options.itemWidth, options.itemHeight);
+
+        context.save();
+        context.textAlign = 'left';
+        context.textBaseline = "middle";
+        context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+        context.fillStyle = options.textStyle.color;
+        context.fillText(item.level, itemX + options.itemWidth + options.wordSpaceing, itemY + radius);
+        context.restore();
+        // this.getTextWidthHeight(item.level);
+    }
+};
+
+Legend.prototype.drawRoundRect = function (context) {
+    var options = this.options;
+    var radius = options.itemHeight / 2;
+    var r = 3;
+    for (var i = 0; i < options.splitList.length; i++) {
+        var item = options.splitList[i];
+        var itemX = this.start.x;
+        var itemY = this.end.y - options.itemHeight * (i + 1) - options.itemGap * i;
+        context.fillStyle = item.color;
+        context.beginPath();
+        context.moveTo(itemX + r, itemY);
+        context.arcTo(itemX + options.itemWidth, itemY, itemX + options.itemWidth, itemY + options.itemHeight, r);
+        context.arcTo(itemX + options.itemWidth, itemY + options.itemHeight, itemX, itemY + options.itemHeight, r);
+        context.arcTo(itemX, itemY + options.itemHeight, itemX, itemY, r);
+        context.arcTo(itemX, itemY, itemX + r, itemY, r);
+        context.closePath();
+        context.fill();
+
+        context.save();
+        context.textAlign = 'left';
+        context.textBaseline = "middle";
+        context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+        context.fillStyle = options.textStyle.color;
+        context.fillText(item.level, itemX + options.itemWidth + options.wordSpaceing, itemY + radius);
+        context.restore();
+    }
+};
+
+Legend.prototype.getTextWidthHeight = function (text) {
+    var span = document.createElement('span');
+    var options = this.options;
+    span.style.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+    span.innerText = text;
+    document.body.appendChild(span);
+    var widthHeight = {
+        width: span.offsetWidth,
+        height: span.offsetHeight
+    };
+    document.body.removeChild(span);
+    return widthHeight;
+};
 
 function Chart(options) {
-    initContainer(options);
+    var self = this;
+    options = options || {};
+    self.options = util.mix({}, defaults, options);
+    self.init();
 }
 
-Chart.prototype.init = function () {};
+Chart.prototype.init = function () {
+    var self = this;
+    var options = self.options;
+    self.container = createContainer(options);
+    var backCanvas = self.backCanvas = createCanvasLayer(options, false);
+    self.midCanvas = createCanvasLayer(options, true);
+    self.foreCanvas = createCanvasLayer(options, true);
+    var view = self.view = new View({
+        width: options.width,
+        height: options.height,
+        margin: options.viewCfg.margin
+    });
+    var legend = self.legend = new Legend(options.legendCfg, view);
+    view.drawLine(self.backCanvas.context); //测试
+    legend.draw(backCanvas.context);
+};
 
-function initContainer(options) {
-    var viewCfg = util.mix({}, defaults.viewCfg, options.viewCfg);
-    var container = createContainer(options);
-    options.viewCfg = viewCfg;
-    options.container = container;
-    initOptions(options);
-    console.log(options);
-}
-
-function createContainer(options) {
-    var id = options.id,
-        dom = document.getElementById(id),
-        container = options.container;
-    if (!dom && !container) {
-        throw new Error("please specify the canvas container Id !");
-    }
-    if (dom && container) {
-        throw new Error('please specify the "container" or "id" property !');
-    }
-    if (!container) {
-        var containerid = util.guid('v-chart');
-        container = util.createDiv();
-        container.id = containerid;
-        container.style.position = 'relative';
-        dom.appendChild(container);
-    }
-    return container;
-}
+Chart.prototype.get = function (name) {
+    return this[name];
+};
 
 function createCanvasLayer(options, capture) {
-    var canvasLayer = new CanvasLayer(options);
+    var canvasLayer = new CanvasLayer({
+        width: options.width,
+        height: options.height,
+        container: options.container,
+        fontFamily: options.fontFamily
+    });
     if (capture) {
         canvasLayer.addTopLeft();
     }
-    canvasLayer['fontFamily'] = defaults.fontFamily;
     return canvasLayer;
-}
-
-function initOptions(options) {
-    var w = options.width,
-        h = options.height,
-        c = options.container,
-        canvasOpt = {
-        width: w,
-        height: h,
-        containerDOM: c,
-        capture: false
-    },
-        c1 = createCanvasLayer(canvasOpt, false),
-        c2 = createCanvasLayer(canvasOpt, true),
-        c3 = createCanvasLayer(canvasOpt, true);
-    options.backCanvas = c1, options.midCanvas = c1, options.foreCanvas = c3;
-    return options;
 }
 
 exports.version = version;

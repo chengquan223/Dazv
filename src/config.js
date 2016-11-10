@@ -31,7 +31,7 @@ var defaults = {
         space: 0, //间距
         isIntersect: true //网格背景交叉
     },
-    legend: {
+    legendCfg: {
         show: true,
         type: 'piecewise', //continuous,piecewise 连续,分段
         min: 0,
@@ -40,7 +40,7 @@ var defaults = {
         height: 180,
         textGap: 10, //两端文字间距离
         selectedMode: 'multiple', //multiple,single 多选,单选
-        itemSymbol: 'circle', //circle,rect,roundRect
+        itemSymbol: 'roundRect', //circle,rect,roundRect
         itemWidth: 20,
         itemHeight: 10,
         itemGap: 14,

@@ -4,16 +4,10 @@
 function Palette(options) {
     options = options || {};
     this.gradient = options.gradient || {
-        0.1: '#DF5A5A',
-        0.2: '#DF775A',
-        0.3: '#DF945A',
-        0.4: '#DFB05A',
-        0.5: '#DFCD5A',
-        0.6: '#D4DF5A',
-        0.7: '#B7DF5A',
-        0.8: '#9ADF5A',
-        0.9: '#7DDF5A',
-        1.0: '#61DF5A'
+        0.1: '#fe0000',
+        0.4: '#ffaa01',
+        0.7: '#b0e000',
+        1.0: '#38a702'
     };
     this.width = options.width || 1;
     this.height = options.height || 256;
@@ -24,20 +18,21 @@ function Palette(options) {
 
 Palette.prototype.init = function () {
     var gradient = this.gradient;
-    var paletteCanvas = document.createElement('canvas');
-    paletteCanvas.width = this.width;
-    paletteCanvas.height = this.height;
-    var paletteCtx = this.paletteCtx = paletteCanvas.getContext('2d');
-    var lineGradient = paletteCtx.createLinearGradient(0, 0, paletteCanvas.width, paletteCanvas.height);
+    var canvas = document.createElement('canvas');
+    canvas.width = this.width;
+    canvas.height = this.height;
+    var context = this.context = canvas.getContext('2d');
+    var lineGradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
     for (var key in gradient) {
         lineGradient.addColorStop(parseFloat(key), gradient[key]);
     }
-    paletteCtx.fillStyle = lineGradient;
-    paletteCtx.fillRect(0, 0, paletteCanvas.width, paletteCanvas.height);
+    context.fillStyle = lineGradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
 }
 
+
 Palette.prototype.getImageData = function () {
-    return this.paletteCtx.getImageData(0, 0, this.width, this.height);
+    return this.context.getImageData(0, 0, this.width, this.height);
 }
 
 Palette.prototype.getColor = function (value) {
@@ -45,9 +40,9 @@ Palette.prototype.getColor = function (value) {
     if (value > max) {
         max = value;
     }
-    var index = Math.floor(value / max * (this.height)) * 4;
-    var imageData = this.getImageData();
-    return "rgba(" + imageData[index] + ", " + imageData[index + 1] + ", " + imageData[index + 2] + ", " + imageData[index + 3] / 256 + ")";
+    var index = Math.floor((max - value) / max * (this.height - 1)) * 4;
+    var imageData = this.context.getImageData(0, 0, 1, this.height).data; //this.width会获取整个调色板data
+    return "rgba(" + imageData[index] + ", " + imageData[index + 1] + ", " + imageData[index + 2] + ", 1)";
 }
 
 export default Palette;

@@ -1,8 +1,8 @@
 function CanvasLayer(options) {
     this.width = options.width;
     this.height = options.height;
-    this.containerDOM = options.containerDOM;
-    this.capture = options.capture;
+    this.containerDOM = options.container;
+    this.fontFamily = options.fontFamily;
     this.init();
 }
 
@@ -10,11 +10,11 @@ CanvasLayer.prototype.init = function () {
     var count = this.containerDOM.childNodes.length;
     var canvasDOM = document.createElement('canvas'),
         context = canvasDOM.getContext('2d');
+    canvasDOM.id = 'canvas_' + (count + 1);
     canvasDOM.width = this.width;
     canvasDOM.height = this.height;
     canvasDOM.style.width = this.width + 'px';
     canvasDOM.style.height = this.height + 'px';
-    canvasDOM.id = 'canvas_' + (count + 1);
     this.containerDOM.appendChild(canvasDOM);
     this.canvasDOM = canvasDOM;
     this.context = context;
