@@ -33,19 +33,21 @@ var defaults = {
             }
         },
         gridAlign: 'start', //栅格的位置跟坐标点(tick)的对齐方式，当前仅支持 start和middle
-        xAxis: {
-            type: '',
+        x: {
+            type: 'date',
             name: '日期（day）',
+            min: 0,
             max: 31,
             showLine: false,
-            minInterval: 1
+            tickInterval: 1
         },
-        yAxis: {
-            type: '',
+        y: {
+            type: 'month',
             name: '月份（month）',
+            min: 0,
             max: 12,
             showLine: false,
-            minInterval: 1
+            tickInterval: 1
         },
         rows: 12, //行
         cols: 31, //列
