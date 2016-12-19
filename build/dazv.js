@@ -61,6 +61,7 @@ var util = {
 var defaults = {
     width: 1000,
     height: 500,
+    fontSize: 12,
     fontFamily: '"Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", SimSun, "sans-serif"',
     viewCfg: {
         margin: [20, 60, 60, 60]
@@ -90,19 +91,21 @@ var defaults = {
             }
         },
         gridAlign: 'start', //栅格的位置跟坐标点(tick)的对齐方式，当前仅支持 start和middle
-        xAxis: {
-            type: '',
+        x: {
+            type: 'date',
             name: '日期（day）',
+            min: 0,
             max: 31,
             showLine: false,
-            minInterval: 1
+            tickInterval: 1
         },
-        yAxis: {
-            type: '',
+        y: {
+            type: 'month',
             name: '月份（month）',
+            min: 0,
             max: 12,
             showLine: false,
-            minInterval: 1
+            tickInterval: 1
         },
         rows: 12, //行
         cols: 31, //列
@@ -118,13 +121,13 @@ var defaults = {
         height: 180,
         textGap: 10, //两端文字间距离
         selectedMode: 'multiple', //multiple,single 多选,单选
-        itemSymbol: 'roundRect', //circle,rect,roundRect
+        itemSymbol: 'circle', //circle,rect,roundRect
         itemWidth: 20,
         itemHeight: 10,
         itemGap: 14,
         wordSpaceing: 8, //marker与文字间距离
-        left: 16, //左侧图表距离
-        bottom: 5, //右侧图表距离
+        left: 15, //左侧图表距离
+        bottom: 5, //底部图表距离
         calculable: true, //是否启用值域漫游，当piecewise时有效，值域显示为线性渐变
         textStyle: {
             fontSize: 12,
@@ -175,10 +178,10 @@ var defaults = {
         }]
     },
     toolTip: {
-        show: true,
+        isShow: true,
         position: [5, 5],
         triggerOn: 'mousemove', //触发条件mousemove，click
-        style: 'position:absolute;background-Color:rgba(0,0,0,0.7);transition:top 0.2s,left 0.2s;border-radius: 2px;color:#fff;line-height: 16px;padding:5px 10px;'
+        style: 'position:absolute;visibility:hidden;background-Color:rgba(0,0,0,0.7);transition:top 0.2s,left 0.2s;border-radius: 2px;color:#fff;line-height: 16px;padding:5px 10px;'
     }
 };
 
@@ -221,6 +224,7 @@ CanvasLayer.prototype.init = function () {
     canvasDOM.style.height = this.height + 'px';
     this.containerDOM.appendChild(canvasDOM);
     this.canvasDOM = canvasDOM;
+    context.fontFamily = this.fontFamily;
     this.context = context;
 };
 
@@ -244,18 +248,6 @@ function View(options) {
     this.width = this.end.x - this.start.x;
     this.height = this.end.y - this.start.y;
 }
-
-View.prototype.drawLine = function (context) {
-    var offset = .5;
-    context.strokeStyle = '#eee';
-    context.beginPath();
-    context.moveTo(this.start.x + offset, this.start.y + offset);
-    context.lineTo(this.end.x + offset, this.start.y + offset);
-    context.lineTo(this.end.x + offset, this.end.y + offset);
-    context.lineTo(this.start.x + offset, this.end.y + offset);
-    context.lineTo(this.start.x + offset, this.start.y + offset);
-    context.stroke();
-};
 
 /**
  * 调色板
@@ -490,6 +482,317 @@ Legend.prototype.getTextWidthHeight = function (text) {
     return widthHeight;
 };
 
+/**
+ * 单元格
+ */
+function Grid(i, x, y, w, h) {
+    this.i = i;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+}
+
+if (!Date.now) Date.now = function () {
+    return new Date().getTime();
+};
+
+(function () {
+    'use strict';
+
+    var vendors = ['webkit', 'moz'];
+    for (var i = 0; i < vendors.length && !window.requestAnimationFrame; ++i) {
+        var vp = vendors[i];
+        window.requestAnimationFrame = window[vp + 'RequestAnimationFrame'];
+        window.cancelAnimationFrame = window[vp + 'CancelAnimationFrame'] || window[vp + 'CancelRequestAnimationFrame'];
+    }
+    if (/iP(ad|hone|od).*OS 6/.test(window.navigator.userAgent) // iOS6 is buggy
+    || !window.requestAnimationFrame || !window.cancelAnimationFrame) {
+        var lastTime = 0;
+        window.requestAnimationFrame = function (callback) {
+            var now = Date.now();
+            var nextTime = Math.max(lastTime + 16, now);
+            return setTimeout(function () {
+                callback(lastTime = nextTime);
+            }, nextTime - now);
+        };
+        window.cancelAnimationFrame = clearTimeout;
+    }
+})();
+
+function Axis(opts, view) {
+    this.opts = opts;
+    this.width = view.width;
+    this.height = view.height;
+    this.start = view.start;
+    this.end = view.end;
+    this.gridWidth = (this.width - opts.cols * opts.space) / opts.cols;
+    this.gridHeight = (this.height - opts.rows * opts.space) / opts.rows;
+    this.createAxisData();
+}
+
+//坐标轴数据
+Axis.prototype.createAxisData = function () {
+    var data = this.axisData = [];
+    for (var i = 0; i < this.opts.cols; i++) {
+        var xdata = [];
+        for (var j = 0; j < this.opts.rows; j++) {
+            xdata.push({
+                x: this.start.x + this.gridWidth * i + this.opts.space * (i + 1),
+                y: this.start.y + this.gridHeight * j + this.opts.space * j
+            });
+        }
+        data.push(xdata);
+    }
+    return data;
+};
+
+Axis.prototype.draw = function (ctxBack) {
+    this.drawAxis(ctxBack);
+    this.drawTickLine(ctxBack);
+    this.opts.isIntersect ? this.drawRectIntersect(ctxBack) : this.drawGridRect(ctxBack);
+    this.drawTitle(ctxBack);
+};
+
+//画x,y轴
+Axis.prototype.drawAxis = function (ctxBack) {
+    ctxBack.beginPath();
+    ctxBack.lineWidth = this.opts.line.lineWidth;
+    ctxBack.strokeStyle = this.opts.line.stroke;
+    ctxBack.moveTo(this.start.x, this.start.y);
+    ctxBack.lineTo(this.start.x, this.end.y);
+    ctxBack.lineTo(this.end.x, this.end.y);
+    ctxBack.stroke();
+};
+
+//画坐标轴刻度尺
+Axis.prototype.drawTickLine = function (ctxBack) {
+    var opts = this.opts,
+        axisData = this.axisData,
+        halfWidth = this.gridWidth / 2,
+        halfHeight = this.gridHeight / 2;
+    ctxBack.save();
+    ctxBack.beginPath();
+    ctxBack.lineWidth = opts.tickLine.lineWidth;
+    ctxBack.strokeStyle = opts.tickLine.stroke;
+    for (var i = 1; i <= axisData.length; i++) {
+        var _day = axisData[i - 1][axisData[i - 1].length - 1],
+            _x = _day.x + halfWidth,
+            _y = this.end.y;
+        ctxBack.moveTo(_x, _y);
+        ctxBack.lineTo(_x, _y + opts.tickLine.value);
+        this.drawLabel(ctxBack, i, _x, _y + opts.lableOffset, true);
+    }
+    for (var j = axisData[0].length; j > 0; j--) {
+        var _month = axisData[0][axisData[0].length - j],
+            _x = this.start.x,
+            _y = _month.y + halfHeight;
+        ctxBack.moveTo(_x, _y);
+        ctxBack.lineTo(_x - opts.tickLine.value, _y);
+        this.drawLabel(ctxBack, j + '月', _x - opts.lableOffset, _y, false);
+    }
+    ctxBack.stroke();
+    ctxBack.restore();
+};
+
+//画坐标轴文本
+Axis.prototype.drawLabel = function (ctxBack, title, x, y, isX) {
+    ctxBack.save();
+    ctxBack.font = this.opts.labels.fontSize + 'px ' + ctxBack.fontFamily;
+    ctxBack.fillStyle = this.opts.labels.fill;
+    if (isX) {
+        ctxBack.textAlign = 'center';
+        ctxBack.textBaseline = 'top';
+        ctxBack.fillText(title, x, y);
+    } else {
+        ctxBack.textAlign = 'right';
+        ctxBack.textBaseline = 'middle';
+        ctxBack.fillText(title, x, y);
+    }
+    ctxBack.restore();
+};
+
+//画坐标轴标题
+Axis.prototype.drawTitle = function (ctxBack) {
+    var opts = this.opts;
+    ctxBack.save();
+    ctxBack.font = opts.title.fontSize + 'px ' + ctxBack.fontFamily;
+    ctxBack.fillStyle = opts.title.fill;
+    ctxBack.save();
+    ctxBack.textAlign = 'center';
+    ctxBack.textBaseline = 'top';
+    ctxBack.fillText('day', this.start.x + this.width / 2, this.end.y + opts.titleOffset);
+    ctxBack.restore();
+    ctxBack.translate(this.start.x - opts.titleOffset, this.end.y - this.height / 2);
+    ctxBack.rotate(-Math.PI / 2);
+    ctxBack.fillText('month', 0, 0);
+    ctxBack.restore();
+};
+
+//填充网格背景
+Axis.prototype.drawGridRect = function (ctxBack) {
+    var axisData = this.axisData;
+    ctxBack.beginPath();
+    ctxBack.save();
+    ctxBack.fillStyle = this.opts.line.fill;
+    for (var i = 0; i < axisData.length; i++) {
+        for (var j = 0; j < axisData[i].length; j++) {
+            var grid = axisData[i][j];
+            ctxBack.rect(grid.x, grid.y, this.gridWidth, this.gridHeight);
+        }
+    }
+    ctxBack.fill();
+    ctxBack.restore();
+};
+
+//填充网格背景(交叉)
+Axis.prototype.drawRectIntersect = function (ctxBack) {
+    var axisData = this.axisData;
+    ctxBack.beginPath();
+    ctxBack.save();
+    for (var i = 0; i < axisData.length; i++) {
+        for (var j = 0; j < axisData[i].length; j++) {
+            if (i % 2 == 0 && j % 2 == 0 || i % 2 != 0 && j % 2 != 0) {
+                ctxBack.fillStyle = '#f9f9f9';
+            } else {
+                ctxBack.fillStyle = this.opts.line.fill;
+            }
+            var grid = axisData[i][j];
+            ctxBack.fillRect(grid.x, grid.y, this.gridWidth, this.gridHeight);
+        }
+    }
+    ctxBack.restore();
+};
+
+//获取单元格
+Axis.prototype.getGrid = function (x, y) {
+    var dataList = this.gridData;
+    for (var i = 0, len = dataList.length; i < len; i++) {
+        var grid = dataList[i];
+        if (x >= grid.x && x < grid.x + this.gridWidth && y >= grid.y && y < grid.y + this.gridHeight) {
+            return grid;
+        }
+    }
+    return false;
+};
+
+Axis.prototype.convertGridData = function (originData, legendOptions) {
+    var self = this;
+    var legendOpts = legendOptions;
+    originData = originData.length > self.opts.cols * self.opts.rows ? originData.slice(0, self.opts.cols * self.opts.rows) : originData;
+    var axisData = this.axisData;
+    var gridData = this.gridData = [];
+    var palette = new Palette({
+        width: legendOpts.width,
+        height: legendOpts.height,
+        min: legendOpts.min,
+        max: legendOpts.max,
+        gradient: legendOpts.gradient
+    });
+    var choropleth = new Choropleth(legendOpts);
+
+    originData.forEach(function (data, i) {
+        if (data.date == undefined || data.date == '') {
+            return;
+        }
+        var reg = new RegExp("^[0-9]*$"),
+            value = data.value,
+            color = self.opts.line.fill,
+            level = '—';
+
+        if (!reg.test(value) || value < 0) {
+            value = '—';
+        } else {
+            if (legendOpts.type === 'continuous') {
+                color = palette.getColor(value);
+                level = choropleth.get(value).level;
+            } else {
+                var split = choropleth.get(value);
+                color = split.color;
+                level = split.level;
+            }
+        }
+        var dateArray = data.date.split('-');
+        if (dateArray.length == 0) return;
+        if (dateArray[1] > self.opts.rows) return;
+        var m = dateArray[1],
+            d = dateArray[2],
+            x = axisData[d - 1][self.opts.rows - m].x,
+            y = axisData[d - 1][self.opts.rows - m].y;
+        var grid = new Grid(i, x, y, self.gridWidth, self.gridHeight);
+        grid.centerx = x + self.gridWidth / 2;
+        grid.centery = y + self.gridWidth / 2;
+        grid.value = value;
+        grid.color = color;
+        grid.level = level;
+        grid.date = data.date;
+        gridData.push(grid);
+    });
+    return gridData;
+};
+
+//渲染中间层canvas网格
+Axis.prototype.renderRect = function (ctxMiddle, originData, legendType) {
+    var self = this;
+    var gridData = this.convertGridData(originData, legendType);
+    var opts = this.opts,
+        halfWidth = this.gridWidth / 2,
+        halfHeight = this.gridHeight / 2;
+    ctxMiddle.save();
+    ctxMiddle.textAlign = 'center';
+    ctxMiddle.textBaseline = "middle";
+    for (var i = 0, len = gridData.length; i < len; i++) {
+        var grid = gridData[i];
+        ctxMiddle.fillStyle = grid.color == null ? opts.line.fill : grid.color;
+        ctxMiddle.fillRect(grid.x, grid.y, this.gridWidth, this.gridHeight);
+        ctxMiddle.save();
+        ctxMiddle.font = opts.labels.fontSize + 'px ' + ctxMiddle.fontFamily;
+        ctxMiddle.fillStyle = opts.labels.fill;
+        ctxMiddle.fillText(grid.value, grid.x + parseInt(halfWidth), grid.y + parseInt(halfHeight));
+        ctxMiddle.restore();
+    }
+    ctxMiddle.restore();
+};
+
+/**
+ * ToolTip消息框
+ */
+function ToolTip(container, options) {
+    this.opts = options;
+    this.container = container;
+    this.style = options.style;
+    this.isShow = options.isShow;
+    this.triggerOn = options.triggerOn;
+    this.create();
+}
+
+ToolTip.prototype.create = function () {
+    var toolTip = document.createElement('div');
+    toolTip.style.cssText = this.style;
+    this.dom = toolTip;
+    this.container.appendChild(toolTip);
+};
+
+ToolTip.prototype.setPosition = function (x, y) {
+    var dom = this.dom;
+    var left = x - dom.offsetWidth - this.opts.position[0];
+    var top = y - dom.offsetHeight - this.opts.position[1];
+    dom.style.left = left + 'px';
+    dom.style.top = top + 'px';
+};
+
+ToolTip.prototype.setContent = function (content) {
+    this.dom.innerHTML = content;
+};
+
+ToolTip.prototype.show = function () {
+    this.dom.style.visibility = 'visible';
+};
+
+ToolTip.prototype.hide = function () {
+    this.dom.style.visibility = 'hidden';
+};
+
 function Chart(options) {
     var self = this;
     options = options || {};
@@ -502,16 +805,90 @@ Chart.prototype.init = function () {
     var options = self.options;
     self.container = createContainer(options);
     var backCanvas = self.backCanvas = createCanvasLayer(options, false);
-    self.midCanvas = createCanvasLayer(options, true);
-    self.foreCanvas = createCanvasLayer(options, true);
+    var middleCanvas = self.midCanvas = createCanvasLayer(options, true);
+    var frontCanvas = self.foreCanvas = createCanvasLayer(options, true);
     var view = self.view = new View({
         width: options.width,
         height: options.height,
         margin: options.viewCfg.margin
     });
+
+    //图例
     var legend = self.legend = new Legend(options.legendCfg, view);
-    view.drawLine(self.backCanvas.context); //测试
-    legend.draw(backCanvas.context);
+
+    //坐标系
+    var axis = new Axis(options.axisCfg, view);
+    axis.draw(backCanvas.context);
+
+    //渲染中间层，文字、颜色
+    axis.renderRect(middleCanvas.context, this.options.data, legend.options);
+
+    //提示信息框
+    var toolTip = new ToolTip(self.container, options.toolTip);
+
+    //渲染最上层
+    (function () {
+        var index = -1;
+        var bbox = frontCanvas.canvasDOM.getBoundingClientRect();
+        var ctxFront = frontCanvas.context;
+
+        function addEventListener() {
+            if (toolTip.triggerOn === 'click') {
+                frontCanvas.canvasDOM.addEventListener('click', move, false);
+                toolTip.dom.addEventListener('click', move, false);
+            } else {
+                frontCanvas.canvasDOM.addEventListener('mousemove', move, false);
+                toolTip.dom.addEventListener('mousemove', move, false);
+            }
+        }
+
+        //鼠标进入，添加遮罩层
+        function addMask(grid) {
+            ctxFront.clearRect(axis.start.x, axis.start.y, axis.width, axis.height);
+            ctxFront.save();
+            ctxFront.fillStyle = 'rgba(255,255,255,0.2)';
+            ctxFront.fillRect(grid.x, grid.y, grid.w, grid.h);
+            ctxFront.restore();
+        }
+
+        //鼠标进入，添加边框
+        function addBorder(grid) {
+            ctxFront.save();
+            ctxFront.clearRect(axis.start.x, axis.start.y, axis.width, axis.height);
+            var offset = 1;
+            ctxFront.lineWidth = 1;
+            ctxFront.strokeStyle = "#3c3c3c";
+            ctxFront.strokeRect(Math.floor(grid.x + offset), Math.floor(grid.y + offset), Math.floor(grid.w - 1.1), Math.floor(grid.h - 1.1));
+            ctxFront.restore();
+        }
+
+        function move(e) {
+            var x = e.clientX - bbox.left;
+            var y = e.clientY - bbox.top;
+            var grid = axis.getGrid(x, y);
+            if (grid) {
+                if (index == grid.i) {
+                    return;
+                }
+                index = grid.i;
+                // addMask(grid);
+                addBorder(grid);
+                if (toolTip.isShow) {
+                    var content = grid.date + '<br>AQI : ' + grid.value + '<br><span style="display:inline-block;margin-right:5px;border-radius:10px;width:9px;height:9px;background-color:' + grid.color + ';"></span>' + grid.level;
+                    toolTip.setContent(content);
+                    toolTip.setPosition(grid.x, grid.y);
+                    toolTip.show();
+                }
+            } else {
+                ctxFront.clearRect(axis.start.x, axis.start.y, axis.width, axis.height);
+                toolTip.hide();
+                index = -1;
+            }
+        }
+
+        legend.draw(ctxFront);
+        addEventListener();
+    })();
 };
 
 Chart.prototype.get = function (name) {

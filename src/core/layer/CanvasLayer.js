@@ -17,6 +17,7 @@ CanvasLayer.prototype.init = function () {
     canvasDOM.style.height = this.height + 'px';
     this.containerDOM.appendChild(canvasDOM);
     this.canvasDOM = canvasDOM;
+    context.fontFamily = this.fontFamily;
     this.context = context;
 }
 

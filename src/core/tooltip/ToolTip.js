@@ -2,68 +2,40 @@
  * ToolTip消息框
  */
 function ToolTip(container, options) {
-    var self = this;
-    var dom = document.createElement('div');
-    options = options || {};
-    self.dom = dom;
-    this._x = 0;
-    this._y = 0;
-    self.options = options;
-    container.appendChild(dom);
-    self.container = container;
-    self._show = false;
+    this.opts = options;
+    this.container = container;
+    this.style = options.style;
+    this.isShow = options.isShow;
+    this.triggerOn = options.triggerOn;
+    this.create();
 }
 
-ToolTip.prototype.update = function () {
-    var domStyle = this.container.style;
-    if (domStyle.position !== 'absolute') {
-        domStyle.position = 'relative';
-    }
+ToolTip.prototype.create = function () {
+    var toolTip = document.createElement('div');
+    toolTip.style.cssText = this.style;
+    this.dom = toolTip;
+    this.container.appendChild(toolTip);
 }
 
-ToolTip.prototype.show = function () {
+ToolTip.prototype.setPosition = function (x, y) {
     var dom = this.dom;
-    dom.style.cssText = this.options.style + ';left:' + this._x + 'px;top:' + this._y + 'px';
-    dom.style.display = dom.innerHTML ? 'block' : 'none';
-    this._show = true;
+    var left = x - dom.offsetWidth - this.opts.position[0];
+    var top = y - dom.offsetHeight - this.opts.position[1];
+    dom.style.left = left + 'px';
+    dom.style.top = top + 'px';
 }
 
 ToolTip.prototype.setContent = function (content) {
-    var dom = this.dom;
-    dom.innerHTML = content;
-    dom.style.display = content ? 'block' : 'none';
+    this.dom.innerHTML = content;
 }
 
-ToolTip.prototype.moveTo = function (x, y) {
-    var style = this.dom.style;
-    style.left = x + 'px';
-    style.top = y + 'px';
-    this._x = x;
-    this._y = y;
+ToolTip.prototype.show = function () {
+    this.dom.style.visibility = 'visible';
 }
 
 ToolTip.prototype.hide = function () {
-    this.dom.style.display = 'none';
-    this._show = false;
+    this.dom.style.visibility = 'hidden';
 }
 
-ToolTip.prototype.hideLater = function (time) {
-    var self = this;
-    if (self._show) {
-        if (time) {
-            self._hideDelay = time;
-            self._show = false;
-            self._hideTimeout = setTimeout(function () {
-                self.hide()
-            }, time);
-        } else {
-            self.hide();
-        }
-    }
-}
-
-ToolTip.prototype.isShow = function () {
-    return this._show;
-}
 
 export default ToolTip;

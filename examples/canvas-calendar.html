@@ -12,6 +12,8 @@
 			margin: 0;
 			padding: 0;
 			overflow: hidden;
+			font-family: 'Helvetica Neue', 'Helvetica', tahoma, 'Hiragino Sans GB', 'PingFang SC', 'STHeitiSC-Light', 'Microsoft YaHei', Arial, sans-serif;
+			font-size: 12px;
 		}
 		
 		#container {
@@ -30,10 +32,28 @@
 	</div>
 	<script type="text/javascript" src="../build/dazv.js"></script>
 	<script>
-		
-		var dazv=new Dazv.Chart({id:'calendar',width:1000,height:500,viewCfg:{margin:[20, 90, 60, 50]}});
-        console.log(dazv);
-    </script>
+		var data = [];
+		for (var i = 1; i <= 12; i++) {
+			var date = new Date(2016, i, 0);
+			for (var j = 1; j <= date.getDate(); j++) {
+				var day = {
+					date: '2016-' + i + '-' + j,
+					value: j == Math.floor(Math.random() * 31) ? -5 : Math.ceil(Math.random() * 160)
+				};
+				data.push(day);
+			}
+		}
+		var dazv = new Dazv.Chart({
+			id: 'calendar',
+			width: 1000,
+			height: 500,
+			viewCfg: {
+				margin: [20, 90, 60, 50]
+			},
+			data: data
+		});
+		console.log(dazv);
+	</script>
 </body>
 
 </html>

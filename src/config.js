@@ -1,6 +1,7 @@
 var defaults = {
     width: 1000,
     height: 500,
+    fontSize: 12,
     fontFamily: '"Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", SimSun, "sans-serif"',
     viewCfg: {
         margin: [20, 60, 60, 60]
@@ -63,13 +64,13 @@ var defaults = {
         height: 180,
         textGap: 10, //两端文字间距离
         selectedMode: 'multiple', //multiple,single 多选,单选
-        itemSymbol: 'roundRect', //circle,rect,roundRect
+        itemSymbol: 'circle', //circle,rect,roundRect
         itemWidth: 20,
         itemHeight: 10,
         itemGap: 14,
         wordSpaceing: 8, //marker与文字间距离
-        left: 16, //左侧图表距离
-        bottom: 5, //右侧图表距离
+        left: 15, //左侧图表距离
+        bottom: 5, //底部图表距离
         calculable: true, //是否启用值域漫游，当piecewise时有效，值域显示为线性渐变
         textStyle: {
             fontSize: 12,
@@ -120,10 +121,10 @@ var defaults = {
         }]
     },
     toolTip: {
-        show: true,
+        isShow: true,
         position: [5, 5],
         triggerOn: 'mousemove', //触发条件mousemove，click
-        style: 'position:absolute;background-Color:rgba(0,0,0,0.7);transition:top 0.2s,left 0.2s;border-radius: 2px;color:#fff;line-height: 16px;padding:5px 10px;'
+        style: 'position:absolute;visibility:hidden;background-Color:rgba(0,0,0,0.7);transition:top 0.2s,left 0.2s;border-radius: 2px;color:#fff;line-height: 16px;padding:5px 10px;'
     }
 };
 

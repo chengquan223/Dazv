@@ -4,9 +4,9 @@
   "description": "canvas data visualization",
   "main": "build/dazv.js",
   "scripts": {
-    "mini":"npm run build && uglifyjs build/dazv.js -c -m -o build/dazv.min.js",
+    "mini": "npm run build && uglifyjs build/dazv.js -c -m -o build/dazv.min.js",
     "build": "rollup -c",
-    "watch":"npm-watch"
+    "watch": "npm-watch"
   },
   "watch": {
     "build": {
@@ -38,6 +38,9 @@
     "npm-watch": "^0.1.6",
     "rollup": "^0.36.3",
     "rollup-plugin-babel": "^2.6.1",
+    "rollup-plugin-commonjs": "^5.0.5",
+    "rollup-plugin-eslint": "^3.0.0",
+    "rollup-plugin-node-resolve": "^2.0.0",
     "uglify-js": "^2.7.4"
   }
 }
