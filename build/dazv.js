@@ -4,6 +4,11 @@
     (factory((global.Dazv = global.Dazv || {})));
 }(this, (function (exports) { 'use strict';
 
+/**
+ * @author https://github.com/chengquan223
+ * @Date 2016-12-15
+ */
+
 var version = "1.0.0";
 
 function guid(id) {
