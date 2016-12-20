@@ -8,5 +8,6 @@ canvas data visualization
 * 日历热力图
 
 ## 示例
-
-![calendar-heatmap](/assset/canvas-calendar.png)
+<a href="https://github.com/chengquan223">
+    <img style="vertical-align: top;" src="./asset/canvas-calendar.png?raw=true" alt="logo">
+</a>
