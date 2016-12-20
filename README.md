@@ -9,4 +9,4 @@ canvas data visualization
 
 ## 示例
 
-![calendar-heatmap](assset/canvas-calendar.png)
+![calendar-heatmap](/assset/canvas-calendar.png)
