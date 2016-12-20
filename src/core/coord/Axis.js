@@ -104,11 +104,11 @@ Axis.prototype.drawTitle = function (ctxBack) {
     ctxBack.save();
     ctxBack.textAlign = 'center';
     ctxBack.textBaseline = 'top';
-    ctxBack.fillText('day', this.start.x + this.width / 2, this.end.y + opts.titleOffset);
+    ctxBack.fillText('日期（day）', this.start.x + this.width / 2, this.end.y + opts.titleOffset);
     ctxBack.restore();
     ctxBack.translate(this.start.x - opts.titleOffset, this.end.y - this.height / 2);
     ctxBack.rotate(-Math.PI / 2);
-    ctxBack.fillText('month', 0, 0);
+    ctxBack.fillText('月份（month）', 0, 0);
     ctxBack.restore();
 }
 

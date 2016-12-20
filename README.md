@@ -9,4 +9,4 @@ canvas data visualization
 
 ## 示例
 
-![calendar-heatmap](http://upload-images.jianshu.io/upload_images/1318847-b547872e67c62f97.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![calendar-heatmap](assset/canvas-calendar.png)
