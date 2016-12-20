@@ -1,7 +1,6 @@
 import Choropleth from '../data-range/Choropleth';
 import Palette from '../data-range/Palette';
 import Grid from '../coord/Grid';
-import '../../tool/requestAnimationFrame';
 
 function Axis(opts, view) {
     this.opts = opts;

@@ -1,11 +1,11 @@
 import util from '../tool/util';
 import defaults from '../config';
-import createContainer from './container';
+import createContainer from '../core/container';
 import CanvasLayer from '../core/layer/CanvasLayer';
 import View from '../core/coord/View';
 import Legend from '../core/legend/Legend';
 import Axis from '../core/coord/Axis';
-import ToolTip from './tooltip/ToolTip';
+import ToolTip from '../core/tooltip/ToolTip';
 
 function Chart(options) {
     var self = this;
@@ -103,10 +103,6 @@ Chart.prototype.init = function () {
         legend.draw(ctxFront);
         addEventListener();
     })();
-}
-
-Chart.prototype.get = function (name) {
-    return this[name];
 }
 
 function createCanvasLayer(options, capture) {
