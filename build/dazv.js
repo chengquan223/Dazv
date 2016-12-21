@@ -110,6 +110,32 @@ var defaults = {
         space: 0, //间距
         isIntersect: true //网格背景交叉
     },
+    calendarCfg: {
+        rows: 3,
+        cols: 4,
+        margin: [0, 10, 8, 0],
+        monthStyle: {
+            height: 20,
+            fill: '#f7f7f7',
+            color: '#666'
+        },
+        weekStyle: {
+            height: 18,
+            fill: '#fff',
+            lineWidth: 0.5,
+            stroke: '#eee',
+            color: '#999'
+        },
+        dayStyle: {
+            color: '#666',
+            stroke: '#ccc',
+            lineWidth: 0.1
+        },
+        itemStyle: {
+            stroke: '#fff',
+            lineWidth: 0.1
+        }
+    },
     legendCfg: {
         show: true,
         type: 'piecewise', //continuous,piecewise 连续,分段
@@ -490,33 +516,6 @@ function Grid(i, x, y, w, h) {
     this.w = w;
     this.h = h;
 }
-
-if (!Date.now) Date.now = function () {
-    return new Date().getTime();
-};
-
-(function () {
-    'use strict';
-
-    var vendors = ['webkit', 'moz'];
-    for (var i = 0; i < vendors.length && !window.requestAnimationFrame; ++i) {
-        var vp = vendors[i];
-        window.requestAnimationFrame = window[vp + 'RequestAnimationFrame'];
-        window.cancelAnimationFrame = window[vp + 'CancelAnimationFrame'] || window[vp + 'CancelRequestAnimationFrame'];
-    }
-    if (/iP(ad|hone|od).*OS 6/.test(window.navigator.userAgent) // iOS6 is buggy
-    || !window.requestAnimationFrame || !window.cancelAnimationFrame) {
-        var lastTime = 0;
-        window.requestAnimationFrame = function (callback) {
-            var now = Date.now();
-            var nextTime = Math.max(lastTime + 16, now);
-            return setTimeout(function () {
-                callback(lastTime = nextTime);
-            }, nextTime - now);
-        };
-        window.cancelAnimationFrame = clearTimeout;
-    }
-})();
 
 function Axis(opts, view) {
     this.opts = opts;
