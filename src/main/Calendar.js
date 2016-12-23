@@ -46,7 +46,8 @@ Calendar.prototype.init = function () {
 
     //坐标系
     var axis = new AxisCalendar(options.calendarCfg, view);
-    axis.draw(backCanvas.context);
+    // axis.render(backCanvas.context, self.data);
+    axis.draw(backCanvas.context, options.data.year);
 }
 
 export default Calendar;

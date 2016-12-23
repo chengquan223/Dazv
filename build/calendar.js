@@ -115,25 +115,28 @@ var defaults = {
         cols: 4,
         margin: [0, 10, 8, 0],
         monthStyle: {
-            height: 20,
+            height: 21,
+            fontSize: 12,
+            fontWeight: 'bold',
             fill: '#f7f7f7',
             color: '#666'
         },
         weekStyle: {
             height: 18,
+            fontSize: 12,
             fill: '#fff',
             lineWidth: 0.5,
-            stroke: '#eee',
             color: '#999'
         },
         dayStyle: {
-            color: '#666',
+            fontSize: 12,
+            lineWidth: 0.1,
             stroke: '#ccc',
-            lineWidth: 0.1
+            color: '#666'
         },
         itemStyle: {
-            stroke: '#fff',
-            lineWidth: 0.1
+            stroke: '#eee',
+            lineWidth: .5
         }
     },
     legendCfg: {
@@ -512,119 +515,111 @@ function AxisCalendar(opts, view) {
     this.height = view.height;
     this.start = view.start;
     this.end = view.end;
-    this.CalculateGridWidthHeight();
+    this.init();
 }
 
-AxisCalendar.prototype.CalculateGridWidthHeight = function () {
+AxisCalendar.prototype.init = function () {
     this.gridWidth = this.width / this.opts.cols;
     this.gridHeight = this.height / this.opts.rows;
+    this.weeks = ['日', '一', '二', '三', '四', '五', '六'];
 };
 
-AxisCalendar.prototype.draw = function (ctx) {
-    var opts = this.opts;
-    var index = 0,
-        left = opts.margin[1],
-        bottom = opts.margin[2],
-        basicData = createBasicData();
-    for (var i = 0; i < opts.rows; i++) {
-        for (var j = 0; j < opts.cols; j++) {
-            var startPoint = {
+AxisCalendar.prototype.drawCalendar = function (ctx, year, month, start) {
+    var options = this.opts;
+    var width = this.gridWidth - options.margin[1];
+    var height = this.gridHeight - options.margin[2];
+    var monthHeight = options.monthStyle.height;
+    var weekWidth = width / this.weeks.length;
+    var weekHeight = options.weekStyle.height;
+    var dayHeight = (height - monthHeight - weekHeight) / 6;
+    ctx.textAlign = "center";
+    ctx.textBaseline = 'middle';
+
+    //月份
+    ctx.beginPath();
+    ctx.save();
+    ctx.fillStyle = options.monthStyle.fill;
+    ctx.fillRect(start.x, start.y, width, monthHeight);
+    ctx.restore();
+    ctx.save();
+    ctx.font = options.monthStyle.fontWeight + ' ' + options.monthStyle.fontSize + 'px ' + ctx.fontFamily;
+    ctx.fillStyle = options.monthStyle.color;
+    ctx.fillText(year + '年' + month + '月', start.x + this.gridWidth / 2, start.y + monthHeight / 2);
+    ctx.restore();
+    ctx.closePath();
+
+    //周
+    ctx.save();
+    ctx.fillStyle = options.weekStyle.fill;
+    ctx.fillRect(start.x, start.y + monthHeight, width, weekHeight);
+    ctx.restore();
+    this.weeks.forEach(function (week, i) {
+        ctx.save();
+        ctx.font = options.weekStyle.fontWeight || '' + ' ' + options.weekStyle.fontSize + 'px ' + ctx.fontFamily;
+        ctx.fillStyle = options.weekStyle.color;
+        ctx.fillText(week, start.x + weekWidth * i + weekWidth / 2, start.y + monthHeight + weekHeight / 2);
+        ctx.restore();
+    });
+
+    //日
+    ctx.save();
+    ctx.font = options.dayStyle.fontWeight || '' + ' ' + options.dayStyle.fontSize + 'px ' + ctx.fontFamily;
+    ctx.fillStyle = options.dayStyle.color;
+
+    var firstDay = new Date(year, month - 1, 1); //这月第一天
+    var firstWeekDay = firstDay.getDay(); //这月第一天星期几
+    firstDay.setMonth(month, 0);
+    var allDays = firstDay.getDate(); //这月有多少天
+    for (var row = 0; row < 6; row++) {
+        for (var col = 0; col < 7; col++) {
+            var index = row * 7 + col;
+            if (index >= allDays + firstWeekDay) continue;
+            if (index >= firstWeekDay) {
+                ctx.fillText(index - firstWeekDay + 1, start.x + weekWidth * col + weekWidth / 2, start.y + monthHeight + weekHeight + dayHeight * row + dayHeight / 2);
+            }
+        }
+    }
+    ctx.restore();
+
+    //边框
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = options.itemStyle.stroke;
+    ctx.lineWidth = options.itemStyle.lineWidth;
+    for (var r = 0; r < 7; r++) {
+        ctx.moveTo(start.x, start.y + monthHeight + weekHeight + dayHeight * r);
+        ctx.lineTo(start.x + width, start.y + monthHeight + weekHeight + dayHeight * r);
+    }
+
+    for (var c = 0; c < 8; c++) {
+        ctx.moveTo(start.x + weekWidth * c, start.y + monthHeight + weekHeight);
+        ctx.lineTo(start.x + weekWidth * c, start.y + height);
+    }
+    ctx.stroke();
+    ctx.closePath();
+    ctx.restore();
+};
+
+//backCanvas渲染
+AxisCalendar.prototype.draw = function (ctx, year) {
+    var options = this.opts;
+    for (var i = 0; i < options.rows; i++) {
+        for (var j = 0; j < options.cols; j++) {
+            var month = i * options.cols + j + 1;
+            var start = {
                 x: this.start.x + this.gridWidth * j,
                 y: this.start.y + this.gridHeight * i
             };
-            drawCalendarBorder(startPoint, this);
-            drawMonth(startPoint, index, basicData, this);
-            drawWeek(startPoint, basicData, this);
-            drawDay(startPoint, this);
+
+            this.drawCalendar(ctx, year, month, start);
         }
     }
+};
 
-    function createBasicData() {
-        return {
-            months: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
-            weeks: ['日', '一', '二', '三', '四', '五', '六']
-        };
-    }
-
-    function drawCalendarBorder(point, _this) {
-        ctx.beginPath();
-        ctx.strokeStyle = opts.itemStyle.stroke;
-        ctx.lineWidth = opts.itemStyle.lineWidth;
-        ctx.rect(point.x, point.y, _this.gridWidth - left, _this.gridHeight - bottom);
-        ctx.stroke();
-        ctx.closePath();
-    }
-
-    function drawMonth(point, index, basicData, _this) {
-        ctx.beginPath();
-        ctx.save();
-        ctx.fillStyle = opts.monthStyle.fill;
-        ctx.fillRect(point.x, point.y, _this.gridWidth - left, opts.monthStyle.height);
-        ctx.restore();
-        ctx.closePath();
-
-        ctx.save();
-        ctx.font = "bold 12px " + ctx.fontFamily;
-        ctx.fillStyle = opts.monthStyle.color;
-        ctx.textAlign = "center";
-        ctx.textBaseline = 'middle';
-        ctx.fillText('2016年' + basicData.months[index], point.x + _this.gridWidth / 2, point.y + 12);
-        ctx.restore();
-    }
-
-    function drawWeek(point, basicData, _this) {
-        var weeks = basicData.weeks;
-        ctx.save();
-        ctx.font = "10px " + ctx.fontFamily;
-        ctx.textAlign = "center";
-        ctx.textBaseline = 'middle';
-        var monthWidth = _this.gridWidth - left,
-            monthHeight = opts.monthStyle.height,
-            weekWidth = monthWidth / 7,
-            weekHeight = opts.weekStyle.height,
-            color = opts.weekStyle.color;
-        ctx.save();
-        ctx.fillStyle = opts.weekStyle.fill;
-        ctx.fillRect(point.x, point.y + monthHeight, monthWidth, weekHeight);
-        ctx.restore();
-        for (var i = 0, len = weeks.length; i < len; i++) {
-            ctx.save();
-            ctx.fillStyle = color;
-            ctx.fillText(weeks[i], point.x + weekWidth * i + weekWidth / 2, point.y + 12 + weekHeight);
-            ctx.restore();
-        }
-        ctx.stroke();
-        ctx.restore();
-    }
-
-    function drawDay(point, _this) {
-        var day = 1,
-            monthWidth = _this.gridWidth - left,
-            monthHeight = opts.monthStyle.height,
-            weekHeight = opts.weekStyle.height,
-            dayWidth = Math.round(monthWidth / 7 * 10) / 10,
-            dayHeight = Math.round((_this.gridHeight - bottom - monthHeight - weekHeight) / 6 * 10) / 10,
-            sy = point.y + monthHeight + weekHeight;
-        ctx.save();
-        ctx.font = "10px " + ctx.fontFamily;
-        ctx.fillStyle = opts.dayStyle.color;
-        ctx.textAlign = "center";
-        for (var i = 0; i < 6; i++) {
-            for (var j = 0; j < 7; j++) {
-                var day = Math.floor(Math.random() * 100);
-                var color = '#fefefe';
-                if (day > 0) {
-                    // color = _opts._opts.legend.events.getColor(day);
-                }
-                ctx.save();
-                ctx.fillStyle = '#eee';
-                ctx.fillRect(point.x + dayWidth * j, sy + dayHeight * i, dayWidth, dayHeight);
-                ctx.restore();
-                ctx.fillText(day, point.x + dayWidth * j + dayWidth / 2, sy + dayHeight * i + dayHeight / 2 + dayHeight / 5);
-            }
-        }
-        ctx.restore();
-    }
+//middleCanvas渲染
+AxisCalendar.prototype.renderRect = function (ctx, originData, legendType) {
+    var self = this;
+    var gridData = this.convertGridData(originData, legendType);
 };
 
 /**
@@ -670,7 +665,8 @@ Calendar.prototype.init = function () {
 
     //坐标系
     var axis = new AxisCalendar(options.calendarCfg, view);
-    axis.draw(backCanvas.context);
+    // axis.render(backCanvas.context, self.data);
+    axis.draw(backCanvas.context, options.data.year);
 };
 
 //日历-色块图

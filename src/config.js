@@ -60,25 +60,28 @@ var defaults = {
         cols: 4,
         margin: [0, 10, 8, 0],
         monthStyle: {
-            height: 20,
+            height: 21,
+            fontSize: 12,
+            fontWeight: 'bold',
             fill: '#f7f7f7',
             color: '#666'
         },
         weekStyle: {
             height: 18,
+            fontSize: 12,
             fill: '#fff',
             lineWidth: 0.5,
-            stroke: '#eee',
             color: '#999',
         },
         dayStyle: {
-            color: '#666',
-            stroke: '#ccc',
+            fontSize: 12,
             lineWidth: 0.1,
+            stroke: '#ccc',
+            color: '#666',
         },
         itemStyle: {
-            stroke: '#fff',
-            lineWidth: 0.1,
+            stroke: '#eee',
+            lineWidth: .5,
         }
     },
     legendCfg: {
