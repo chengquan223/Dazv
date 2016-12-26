@@ -63,25 +63,24 @@ var defaults = {
             height: 21,
             fontSize: 12,
             fontWeight: 'bold',
-            fill: '#F4F4F4',
-            color: '#3c3c3c'
+            fill: '#f7f7f7',
+            color: '#666'
         },
         weekStyle: {
             height: 21,
             fontSize: 12,
             fill: '#fff',
-            color: '#666',
+            color: '#999',
         },
         dayStyle: {
             fontSize: 12,
-            lineWidth: 0.1,
             stroke: '#ccc',
             color: '#3c3c3c',
         },
         itemStyle: {
             stroke: '#eee',
-            fill: '#f1f1f1',
-            lineWidth: 1,
+            fill: '#ddd',
+            lineWidth: .5,
         }
     },
     legendCfg: {

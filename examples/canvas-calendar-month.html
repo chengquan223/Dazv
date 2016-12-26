@@ -41,7 +41,7 @@
             for (var j = 1; j <= date.getDate(); j++) {
                 var day = {
                     date: '2016-' + i + '-' + j,
-                    value: j == Math.floor(Math.random() * 31) ? -5 : Math.ceil(Math.random() * 160)
+                    value: j == Math.floor(Math.random() * 31) ? -5 : Math.ceil(Math.random() * 150)
                 };
                 data.days.push(day);
             }
@@ -54,7 +54,11 @@
                 margin: [20, 90, 60, 50]
             },
             legendCfg: {
-                left: 7 //左侧图表距离
+                type: 'piecewise', //continuous,piecewise 连续,分段
+                itemSymbol: 'circle', //circle,rect,roundRect
+                calculable: true, //是否启用值域漫游，当piecewise时有效，值域显示为线性渐变
+                left: 7, //左侧图表距离
+                bottom: 15
             },
             data: data
         });
