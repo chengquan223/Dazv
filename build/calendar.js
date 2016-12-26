@@ -4,6 +4,101 @@
     (factory((global.Dazv = global.Dazv || {})));
 }(this, (function (exports) { 'use strict';
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+// 用于处理merge时无法遍历Date等对象的问题
+var BUILTIN_OBJECT = {
+    '[object Function]': 1,
+    '[object RegExp]': 1,
+    '[object Date]': 1,
+    '[object Error]': 1,
+    '[object CanvasGradient]': 1,
+    '[object CanvasPattern]': 1,
+    // For node-canvas
+    '[object Image]': 1,
+    '[object Canvas]': 1
+};
+var TYPED_ARRAY = {
+    '[object Int8Array]': 1,
+    '[object Uint8Array]': 1,
+    '[object Uint8ClampedArray]': 1,
+    '[object Int16Array]': 1,
+    '[object Uint16Array]': 1,
+    '[object Int32Array]': 1,
+    '[object Uint32Array]': 1,
+    '[object Float32Array]': 1,
+    '[object Float64Array]': 1
+};
+var objToString = Object.prototype.toString;
+
+function isObject(value) {
+    var type = typeof value === 'undefined' ? 'undefined' : _typeof(value);
+    return type === 'function' || !!value && type == 'object';
+}
+
+function isArray(value) {
+    return objToString.call(value) === '[object Array]';
+}
+
+function isDom(value) {
+    return (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object' && typeof value.nodeType === 'number' && _typeof(value.ownerDocument) === 'object';
+}
+
+function isBuildInObject(value) {
+    return !!BUILTIN_OBJECT[objToString.call(value)];
+}
+
+function clone(source) {
+    if (source == null || (typeof source === 'undefined' ? 'undefined' : _typeof(source)) != 'object') {
+        return source;
+    }
+
+    var result = source;
+    var typeStr = objToString.call(source);
+
+    if (typeStr === '[object Array]') {
+        result = [];
+        for (var i = 0, len = source.length; i < len; i++) {
+            result[i] = clone(source[i]);
+        }
+    } else if (TYPED_ARRAY[typeStr]) {
+        result = source.constructor.from(source);
+    } else if (!BUILTIN_OBJECT[typeStr] && !isDom(source)) {
+        result = {};
+        for (var key in source) {
+            if (source.hasOwnProperty(key)) {
+                result[key] = clone(source[key]);
+            }
+        }
+    }
+
+    return result;
+}
+
+function merge(target, source, overwrite) {
+    if (!isObject(source) || !isObject(target)) {
+        return overwrite ? clone(source) : target;
+    }
+
+    for (var key in source) {
+        if (source.hasOwnProperty(key)) {
+            var targetProp = target[key];
+            var sourceProp = source[key];
+
+            if (isObject(sourceProp) && isObject(targetProp) && !isArray(sourceProp) && !isArray(targetProp) && !isDom(sourceProp) && !isDom(targetProp) && !isBuildInObject(sourceProp) && !isBuildInObject(targetProp)) {
+                // 如果需要递归覆盖，就递归调用merge
+                merge(targetProp, sourceProp, overwrite);
+            } else if (overwrite || !(key in target)) {
+                // 否则只处理overwrite为true，或者在目标对象中没有此属性的情况
+                // NOTE，在 target[key] 不存在的时候也是直接覆盖
+                target[key] = clone(source[key], true);
+            }
+        }
+    }
+
+    return target;
+}
+
 function guid(id) {
     var t = {};
     id = id || 'v';
@@ -14,53 +109,17 @@ function createDiv() {
     return document.createElement('div');
 }
 
-function toArray(obj) {
-    return obj && obj.length ? Array.prototype.slice.call(obj) : [];
-}
-
-function mix() {
-    var t = this.toArray(arguments),
-        newObj = t[0];
-    if (newObj === !0) {
-        newObj = t[1];
-        for (var i = 2; i < t.length; i++) {
-            var item = t[i];
-            combine(newObj, item);
-        }
-    } else {
-        for (var i = 1; i < t.length; i++) {
-            var item = t[i];
-            for (var a in item) {
-                item.hasOwnProperty(a) && "constructor" !== a && (newObj[a] = item[a]);
-            }
-        }
-        return newObj;
-    }
-}
-
-function combine(dest, source, r) {
-    var a = 5;
-    r = r || 0;
-    for (var i in source) {
-        if (source.hasOwnProperty(i)) {
-            var o = source[i];
-            null !== o && s.isObject(o) ? (s.isObject(dest[i]) || (dest[i] = {}), r < a ? n(dest[i], source[i], r + 1) : dest[i] = source[i]) : s.isArray(o) ? (dest[i] = [], dest[i] = dest[i].concat(o)) : void 0 !== o && (dest[i] = source[i]);
-        }
-    }
-}
-
 var util = {
+    merge: merge,
     guid: guid,
-    createDiv: createDiv,
-    mix: mix,
-    toArray: toArray
+    createDiv: createDiv
 };
 
 var defaults = {
     width: 1000,
     height: 500,
     fontSize: 12,
-    fontFamily: '"Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", SimSun, "sans-serif"',
+    fontFamily: '"Helvetica Neue",Helvetica,"Hiragino Sans GB","STHeitiSC-LIght","Microsoft YaHei","微软雅黑",Arial,sans-serif',
     viewCfg: {
         margin: [20, 60, 60, 60]
     },
@@ -118,25 +177,25 @@ var defaults = {
             height: 21,
             fontSize: 12,
             fontWeight: 'bold',
-            fill: '#f7f7f7',
-            color: '#666'
+            fill: '#F4F4F4',
+            color: '#3c3c3c'
         },
         weekStyle: {
-            height: 18,
+            height: 21,
             fontSize: 12,
             fill: '#fff',
-            lineWidth: 0.5,
-            color: '#999'
+            color: '#666'
         },
         dayStyle: {
             fontSize: 12,
             lineWidth: 0.1,
             stroke: '#ccc',
-            color: '#666'
+            color: '#3c3c3c'
         },
         itemStyle: {
             stroke: '#eee',
-            lineWidth: .5
+            fill: '#f1f1f1',
+            lineWidth: 1
         }
     },
     legendCfg: {
@@ -158,7 +217,6 @@ var defaults = {
         calculable: true, //是否启用值域漫游，当piecewise时有效，值域显示为线性渐变
         textStyle: {
             fontSize: 12,
-            fontFamily: '"Microsoft YaHei", "微软雅黑", SimSun, "sans-serif"',
             color: '#3c3c3c'
         },
         gradient: {
@@ -397,7 +455,7 @@ Legend.prototype.drawByContinuous = function (context) {
     });
     context.putImageData(palette.getImageData(), this.start.x, this.start.y);
     context.save();
-    context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+    context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
     context.fillStyle = options.textStyle.color;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
@@ -407,7 +465,7 @@ Legend.prototype.drawByContinuous = function (context) {
 };
 
 Legend.prototype.drawByPieceWise = function (context) {
-    var choropleth = new Choropleth(this.options);
+    var choropleth = new Choropleth(this.options); //分段颜色连续
     switch (this.options.itemSymbol) {
         case 'circle':
             this.drawCircle(context);
@@ -439,7 +497,7 @@ Legend.prototype.drawCircle = function (context) {
         context.save();
         context.textAlign = 'left';
         context.textBaseline = "middle";
-        context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+        context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
         context.fillStyle = options.textStyle.color;
         context.fillText(item.level, itemX + radius + options.wordSpaceing, itemY);
         context.restore();
@@ -459,11 +517,10 @@ Legend.prototype.drawRect = function (context) {
         context.save();
         context.textAlign = 'left';
         context.textBaseline = "middle";
-        context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+        context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
         context.fillStyle = options.textStyle.color;
         context.fillText(item.level, itemX + options.itemWidth + options.wordSpaceing, itemY + radius);
         context.restore();
-        // this.getTextWidthHeight(item.level);
     }
 };
 
@@ -488,50 +545,50 @@ Legend.prototype.drawRoundRect = function (context) {
         context.save();
         context.textAlign = 'left';
         context.textBaseline = "middle";
-        context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+        context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
         context.fillStyle = options.textStyle.color;
         context.fillText(item.level, itemX + options.itemWidth + options.wordSpaceing, itemY + radius);
         context.restore();
     }
 };
 
-Legend.prototype.getTextWidthHeight = function (text) {
-    var span = document.createElement('span');
-    var options = this.options;
-    span.style.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
-    span.innerText = text;
-    document.body.appendChild(span);
-    var widthHeight = {
-        width: span.offsetWidth,
-        height: span.offsetHeight
-    };
-    document.body.removeChild(span);
-    return widthHeight;
-};
+/**
+ * 单元格
+ */
+function Grid(i, x, y, w, h) {
+    this.i = i;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+}
 
 function AxisCalendar(opts, view) {
     this.opts = opts;
-    this.width = view.width;
-    this.height = view.height;
+    this.viewWidth = view.width;
+    this.viewHeight = view.height;
     this.start = view.start;
     this.end = view.end;
     this.init();
 }
 
 AxisCalendar.prototype.init = function () {
-    this.gridWidth = this.width / this.opts.cols;
-    this.gridHeight = this.height / this.opts.rows;
+    var options = this.opts;
     this.weeks = ['日', '一', '二', '三', '四', '五', '六'];
+    this.boxWidth = this.viewWidth / this.opts.cols;
+    this.boxHeight = this.viewHeight / this.opts.rows;
+    this.width = this.boxWidth - options.margin[1];
+    this.height = this.boxHeight - options.margin[2];
+    this.monthHeight = options.monthStyle.height;
+    this.weekWidth = this.dayWidth = this.width / this.weeks.length;
+    this.weekHeight = options.weekStyle.height;
+    this.dayHeight = (this.height - this.monthHeight - this.weekHeight) / 6; //6行
+    this.axisData = [];
 };
 
 AxisCalendar.prototype.drawCalendar = function (ctx, year, month, start) {
-    var options = this.opts;
-    var width = this.gridWidth - options.margin[1];
-    var height = this.gridHeight - options.margin[2];
-    var monthHeight = options.monthStyle.height;
-    var weekWidth = width / this.weeks.length;
-    var weekHeight = options.weekStyle.height;
-    var dayHeight = (height - monthHeight - weekHeight) / 6;
+    var self = this;
+    var options = self.opts;
     ctx.textAlign = "center";
     ctx.textBaseline = 'middle';
 
@@ -539,25 +596,25 @@ AxisCalendar.prototype.drawCalendar = function (ctx, year, month, start) {
     ctx.beginPath();
     ctx.save();
     ctx.fillStyle = options.monthStyle.fill;
-    ctx.fillRect(start.x, start.y, width, monthHeight);
+    ctx.fillRect(start.x, start.y, self.width, self.monthHeight);
     ctx.restore();
     ctx.save();
     ctx.font = options.monthStyle.fontWeight + ' ' + options.monthStyle.fontSize + 'px ' + ctx.fontFamily;
     ctx.fillStyle = options.monthStyle.color;
-    ctx.fillText(year + '年' + month + '月', start.x + this.gridWidth / 2, start.y + monthHeight / 2);
+    ctx.fillText(year + '年' + month + '月', start.x + self.width / 2, start.y + self.monthHeight / 2);
     ctx.restore();
     ctx.closePath();
 
     //周
     ctx.save();
     ctx.fillStyle = options.weekStyle.fill;
-    ctx.fillRect(start.x, start.y + monthHeight, width, weekHeight);
+    ctx.fillRect(start.x, start.y + self.monthHeight, self.width, self.weekHeight);
     ctx.restore();
-    this.weeks.forEach(function (week, i) {
+    self.weeks.forEach(function (week, i) {
         ctx.save();
         ctx.font = options.weekStyle.fontWeight || '' + ' ' + options.weekStyle.fontSize + 'px ' + ctx.fontFamily;
         ctx.fillStyle = options.weekStyle.color;
-        ctx.fillText(week, start.x + weekWidth * i + weekWidth / 2, start.y + monthHeight + weekHeight / 2);
+        ctx.fillText(week, start.x + self.weekWidth * i + self.weekWidth / 2, start.y + self.monthHeight + self.weekHeight / 2);
         ctx.restore();
     });
 
@@ -570,15 +627,23 @@ AxisCalendar.prototype.drawCalendar = function (ctx, year, month, start) {
     var firstWeekDay = firstDay.getDay(); //这月第一天星期几
     firstDay.setMonth(month, 0);
     var allDays = firstDay.getDate(); //这月有多少天
+    var dayDatas = [];
     for (var row = 0; row < 6; row++) {
         for (var col = 0; col < 7; col++) {
             var index = row * 7 + col;
             if (index >= allDays + firstWeekDay) continue;
             if (index >= firstWeekDay) {
-                ctx.fillText(index - firstWeekDay + 1, start.x + weekWidth * col + weekWidth / 2, start.y + monthHeight + weekHeight + dayHeight * row + dayHeight / 2);
+                var x = start.x + self.weekWidth * col;
+                var y = start.y + self.monthHeight + self.weekHeight + self.dayHeight * row;
+                ctx.fillText(index - firstWeekDay + 1, x + self.weekWidth / 2, y + self.dayHeight / 2);
+                dayDatas.push({
+                    x: x,
+                    y: y
+                });
             }
         }
     }
+    self.axisData.push(dayDatas);
     ctx.restore();
 
     //边框
@@ -586,15 +651,17 @@ AxisCalendar.prototype.drawCalendar = function (ctx, year, month, start) {
     ctx.beginPath();
     ctx.strokeStyle = options.itemStyle.stroke;
     ctx.lineWidth = options.itemStyle.lineWidth;
+    ctx.strokeRect(start.x, start.y, self.width, self.monthHeight); //月份边框
     for (var r = 0; r < 7; r++) {
-        ctx.moveTo(start.x, start.y + monthHeight + weekHeight + dayHeight * r);
-        ctx.lineTo(start.x + width, start.y + monthHeight + weekHeight + dayHeight * r);
+        ctx.moveTo(start.x, start.y + self.monthHeight + self.weekHeight + self.dayHeight * r);
+        ctx.lineTo(start.x + self.width, start.y + self.monthHeight + self.weekHeight + self.dayHeight * r);
     }
 
     for (var c = 0; c < 8; c++) {
-        ctx.moveTo(start.x + weekWidth * c, start.y + monthHeight + weekHeight);
-        ctx.lineTo(start.x + weekWidth * c, start.y + height);
+        ctx.moveTo(start.x + self.weekWidth * c, start.y + self.monthHeight);
+        ctx.lineTo(start.x + self.weekWidth * c, start.y + self.height);
     }
+
     ctx.stroke();
     ctx.closePath();
     ctx.restore();
@@ -607,8 +674,8 @@ AxisCalendar.prototype.draw = function (ctx, year) {
         for (var j = 0; j < options.cols; j++) {
             var month = i * options.cols + j + 1;
             var start = {
-                x: this.start.x + this.gridWidth * j,
-                y: this.start.y + this.gridHeight * i
+                x: this.start.x + this.boxWidth * j,
+                y: this.start.y + this.boxHeight * i
             };
 
             this.drawCalendar(ctx, year, month, start);
@@ -616,15 +683,133 @@ AxisCalendar.prototype.draw = function (ctx, year) {
     }
 };
 
-//middleCanvas渲染
-AxisCalendar.prototype.renderRect = function (ctx, originData, legendType) {
+//获取单元格
+AxisCalendar.prototype.getGrid = function (x, y) {
+    var dataList = this.gridData;
+    for (var i = 0, len = dataList.length; i < len; i++) {
+        var grid = dataList[i];
+        if (x >= grid.x && x < grid.x + grid.w && y >= grid.y && y < grid.y + grid.h) {
+            return grid;
+        }
+    }
+    return false;
+};
+
+AxisCalendar.prototype.convertGridData = function (originData, legendOpts) {
     var self = this;
-    var gridData = this.convertGridData(originData, legendType);
+    var axisData = self.axisData;
+    var gridData = self.gridData = [];
+    var palette = new Palette({
+        width: legendOpts.width,
+        height: legendOpts.height,
+        min: legendOpts.min,
+        max: legendOpts.max,
+        gradient: legendOpts.gradient
+    });
+    var choropleth = new Choropleth(legendOpts);
+
+    originData.forEach(function (data, i) {
+        if (data.date == undefined || data.date == '') {
+            return;
+        }
+        var reg = new RegExp("^[0-9]*$"),
+            value = data.value,
+            color = self.opts.itemStyle.fill,
+            level = '—';
+
+        if (!reg.test(value) || value < 0) {
+            value = '—';
+        } else {
+            if (legendOpts.type === 'continuous') {
+                color = palette.getColor(value);
+                level = choropleth.get(value).level;
+            } else {
+                var split = choropleth.get(value);
+                color = split.color;
+                level = split.level;
+            }
+        }
+        var dateArray = data.date.split('-');
+        if (dateArray.length == 0) return;
+        var m = dateArray[1],
+            d = dateArray[2],
+            x = axisData[m - 1][d - 1].x,
+            y = axisData[m - 1][d - 1].y;
+        var grid = new Grid(i, x, y, self.dayWidth, self.dayHeight);
+        grid.centerx = x + self.dayWidth / 2;
+        grid.centery = y + self.dayWidth / 2;
+        grid.value = value;
+        grid.color = color;
+        grid.level = level;
+        grid.date = data.date;
+        grid.day = d;
+        gridData.push(grid);
+    });
+    return gridData;
+};
+
+//middleCanvas渲染
+AxisCalendar.prototype.renderRect = function (ctxMiddle, originData, legendOpts) {
+    var self = this;
+    var gridData = self.convertGridData(originData, legendOpts);
+
+    var opts = self.opts,
+        halfWidth = self.dayWidth / 2,
+        halfHeight = self.dayHeight / 2;
+    ctxMiddle.save();
+    ctxMiddle.textAlign = 'center';
+    ctxMiddle.textBaseline = "middle";
+    ctxMiddle.font = opts.dayStyle.fontSize + 'px ' + ctxMiddle.fontFamily;
+    for (var i = 0, len = gridData.length; i < len; i++) {
+        var grid = gridData[i];
+        ctxMiddle.fillStyle = grid.color == null ? opts.itemStyle.fill : grid.color;
+        ctxMiddle.fillRect(grid.x, grid.y, grid.w, grid.h);
+        ctxMiddle.save();
+        ctxMiddle.fillStyle = opts.dayStyle.color;
+        ctxMiddle.fillText(grid.day, grid.x + parseInt(halfWidth), grid.y + parseInt(halfHeight));
+        ctxMiddle.restore();
+    }
+    ctxMiddle.restore();
 };
 
 /**
  * ToolTip消息框
  */
+function ToolTip(container, options) {
+    this.opts = options;
+    this.container = container;
+    this.style = options.style;
+    this.isShow = options.isShow;
+    this.triggerOn = options.triggerOn;
+    this.create();
+}
+
+ToolTip.prototype.create = function () {
+    var toolTip = document.createElement('div');
+    toolTip.style.cssText = this.style;
+    this.dom = toolTip;
+    this.container.appendChild(toolTip);
+};
+
+ToolTip.prototype.setPosition = function (x, y) {
+    var dom = this.dom;
+    var left = x - dom.offsetWidth - this.opts.position[0];
+    var top = y - dom.offsetHeight - this.opts.position[1];
+    dom.style.left = left + 'px';
+    dom.style.top = top + 'px';
+};
+
+ToolTip.prototype.setContent = function (content) {
+    this.dom.innerHTML = content;
+};
+
+ToolTip.prototype.show = function () {
+    this.dom.style.visibility = 'visible';
+};
+
+ToolTip.prototype.hide = function () {
+    this.dom.style.visibility = 'hidden';
+};
 
 function createCanvasLayer(options, capture) {
     var canvasLayer = new CanvasLayer({
@@ -640,10 +825,9 @@ function createCanvasLayer(options, capture) {
 }
 
 function Calendar(options) {
-    var self = this;
     options = options || {};
-    self.options = util.mix({}, defaults, options);
-    self.init();
+    this.options = util.merge(defaults, options, true);
+    this.init();
 }
 
 Calendar.prototype.init = function () {
@@ -665,13 +849,80 @@ Calendar.prototype.init = function () {
 
     //坐标系
     var axis = new AxisCalendar(options.calendarCfg, view);
-    // axis.render(backCanvas.context, self.data);
     axis.draw(backCanvas.context, options.data.year);
+
+    //渲染中间层，文字、颜色
+    axis.renderRect(middleCanvas.context, this.options.data.days, legend.options);
+
+    //提示信息框
+    var toolTip = new ToolTip(self.container, options.toolTip);
+
+    //渲染最上层
+    (function () {
+        var index = -1;
+        var bbox = frontCanvas.canvasDOM.getBoundingClientRect();
+        var ctxFront = frontCanvas.context;
+
+        function addEventListener() {
+            if (toolTip.triggerOn === 'click') {
+                frontCanvas.canvasDOM.addEventListener('click', move, false);
+                toolTip.dom.addEventListener('click', move, false);
+            } else {
+                frontCanvas.canvasDOM.addEventListener('mousemove', move, false);
+                toolTip.dom.addEventListener('mousemove', move, false);
+            }
+        }
+
+        //鼠标进入，添加遮罩层
+        function addMask(grid) {
+            ctxFront.clearRect(axis.start.x, axis.start.y, axis.width, axis.height);
+            ctxFront.save();
+            ctxFront.fillStyle = 'rgba(255,255,255,0.2)';
+            ctxFront.fillRect(grid.x, grid.y, grid.w, grid.h);
+            ctxFront.restore();
+        }
+
+        //鼠标进入，添加边框
+        function addBorder(grid) {
+            ctxFront.save();
+            ctxFront.clearRect(axis.start.x, axis.start.y, axis.viewWidth, axis.viewHeight);
+            var offset = 1;
+            ctxFront.lineWidth = 1;
+            ctxFront.strokeStyle = "#3c3c3c";
+            ctxFront.strokeRect(Math.floor(grid.x + offset), Math.floor(grid.y + offset), Math.floor(grid.w - 1.1), Math.floor(grid.h - 1.1));
+            ctxFront.restore();
+        }
+
+        function move(e) {
+            var x = e.clientX - bbox.left;
+            var y = e.clientY - bbox.top;
+            var grid = axis.getGrid(x, y);
+            if (grid) {
+                if (index == grid.i) {
+                    return;
+                }
+                index = grid.i;
+                // addMask(grid);
+                addBorder(grid);
+                if (toolTip.isShow) {
+                    var content = grid.date + '<br>AQI : ' + grid.value + '<br><span style="display:inline-block;margin-right:5px;border-radius:10px;width:9px;height:9px;background-color:' + grid.color + ';"></span>' + grid.level;
+                    toolTip.setContent(content);
+                    toolTip.setPosition(grid.x, grid.y);
+                    toolTip.show();
+                }
+            } else {
+                ctxFront.clearRect(axis.start.x, axis.start.y, axis.viewWidth, axis.viewHeight);
+                toolTip.hide();
+                index = -1;
+            }
+        }
+
+        addEventListener();
+    })();
 };
 
 //日历-色块图
 // export{default as Chart}from'./src/main/Chart';
-
 
 // 日历-色块图（逐月）
 

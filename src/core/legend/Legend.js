@@ -43,7 +43,7 @@ Legend.prototype.drawByContinuous = function (context) {
     });
     context.putImageData(palette.getImageData(), this.start.x, this.start.y);
     context.save();
-    context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+    context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
     context.fillStyle = options.textStyle.color;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
@@ -53,7 +53,7 @@ Legend.prototype.drawByContinuous = function (context) {
 }
 
 Legend.prototype.drawByPieceWise = function (context) {
-    var choropleth = new Choropleth(this.options);
+    var choropleth = new Choropleth(this.options); //分段颜色连续
     switch (this.options.itemSymbol) {
         case 'circle':
             this.drawCircle(context);
@@ -85,7 +85,7 @@ Legend.prototype.drawCircle = function (context) {
         context.save();
         context.textAlign = 'left';
         context.textBaseline = "middle";
-        context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+        context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
         context.fillStyle = options.textStyle.color;
         context.fillText(item.level, itemX + radius + options.wordSpaceing, itemY);
         context.restore();
@@ -105,11 +105,10 @@ Legend.prototype.drawRect = function (context) {
         context.save();
         context.textAlign = 'left';
         context.textBaseline = "middle";
-        context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+        context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
         context.fillStyle = options.textStyle.color;
         context.fillText(item.level, itemX + options.itemWidth + options.wordSpaceing, itemY + radius);
         context.restore();
-        // this.getTextWidthHeight(item.level);
     }
 }
 
@@ -134,25 +133,11 @@ Legend.prototype.drawRoundRect = function (context) {
         context.save();
         context.textAlign = 'left';
         context.textBaseline = "middle";
-        context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+        context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
         context.fillStyle = options.textStyle.color;
         context.fillText(item.level, itemX + options.itemWidth + options.wordSpaceing, itemY + radius);
         context.restore();
     }
-}
-
-Legend.prototype.getTextWidthHeight = function (text) {
-    var span = document.createElement('span');
-    var options = this.options;
-    span.style.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
-    span.innerText = text;
-    document.body.appendChild(span);
-    var widthHeight = {
-        width: span.offsetWidth,
-        height: span.offsetHeight
-    };
-    document.body.removeChild(span);
-    return widthHeight;
 }
 
 export default Legend;

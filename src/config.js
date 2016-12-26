@@ -2,7 +2,7 @@ var defaults = {
     width: 1000,
     height: 500,
     fontSize: 12,
-    fontFamily: '"Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", SimSun, "sans-serif"',
+    fontFamily: '"Helvetica Neue",Helvetica,"Hiragino Sans GB","STHeitiSC-LIght","Microsoft YaHei","微软雅黑",Arial,sans-serif',
     viewCfg: {
         margin: [20, 60, 60, 60]
     },
@@ -63,25 +63,25 @@ var defaults = {
             height: 21,
             fontSize: 12,
             fontWeight: 'bold',
-            fill: '#f7f7f7',
-            color: '#666'
+            fill: '#F4F4F4',
+            color: '#3c3c3c'
         },
         weekStyle: {
-            height: 18,
+            height: 21,
             fontSize: 12,
             fill: '#fff',
-            lineWidth: 0.5,
-            color: '#999',
+            color: '#666',
         },
         dayStyle: {
             fontSize: 12,
             lineWidth: 0.1,
             stroke: '#ccc',
-            color: '#666',
+            color: '#3c3c3c',
         },
         itemStyle: {
             stroke: '#eee',
-            lineWidth: .5,
+            fill: '#f1f1f1',
+            lineWidth: 1,
         }
     },
     legendCfg: {
@@ -103,7 +103,6 @@ var defaults = {
         calculable: true, //是否启用值域漫游，当piecewise时有效，值域显示为线性渐变
         textStyle: {
             fontSize: 12,
-            fontFamily: '"Microsoft YaHei", "微软雅黑", SimSun, "sans-serif"',
             color: '#3c3c3c'
         },
         gradient: {

@@ -162,8 +162,8 @@ Axis.prototype.convertGridData = function (originData, legendOptions) {
     var self = this;
     var legendOpts = legendOptions;
     originData = originData.length > self.opts.cols * self.opts.rows ? originData.slice(0, self.opts.cols * self.opts.rows) : originData;
-    var axisData = this.axisData;
-    var gridData = this.gridData = [];
+    var axisData = self.axisData;
+    var gridData = self.gridData = [];
     var palette = new Palette({
         width: legendOpts.width,
         height: legendOpts.height,
@@ -216,17 +216,17 @@ Axis.prototype.convertGridData = function (originData, legendOptions) {
 //渲染中间层canvas网格
 Axis.prototype.renderRect = function (ctxMiddle, originData, legendType) {
     var self = this;
-    var gridData = this.convertGridData(originData, legendType);
-    var opts = this.opts,
-        halfWidth = this.gridWidth / 2,
-        halfHeight = this.gridHeight / 2;
+    var gridData = self.convertGridData(originData, legendType);
+    var opts = self.opts,
+        halfWidth = self.gridWidth / 2,
+        halfHeight = self.gridHeight / 2;
     ctxMiddle.save();
     ctxMiddle.textAlign = 'center';
     ctxMiddle.textBaseline = "middle";
     for (var i = 0, len = gridData.length; i < len; i++) {
         var grid = gridData[i];
         ctxMiddle.fillStyle = grid.color == null ? opts.line.fill : grid.color;
-        ctxMiddle.fillRect(grid.x, grid.y, this.gridWidth, this.gridHeight);
+        ctxMiddle.fillRect(grid.x, grid.y, self.gridWidth, self.gridHeight);
         ctxMiddle.save();
         ctxMiddle.font = opts.labels.fontSize + 'px ' + ctxMiddle.fontFamily;
         ctxMiddle.fillStyle = opts.labels.fill;
@@ -235,7 +235,5 @@ Axis.prototype.renderRect = function (ctxMiddle, originData, legendType) {
     }
     ctxMiddle.restore();
 }
-
-
 
 export default Axis;

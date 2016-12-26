@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
     <meta name="viewport" content="width=device-width, initial-scale=1" user-scalable="no">
-    <title>日历-色块图</title>
+    <title>日历-色块图-月度</title>
     <style type="text/css">
         html,
         body {
@@ -34,22 +34,17 @@
     <script>
         var data = {
             year: 2016,
-            months: []
+            days: []
         };
         for (var i = 1; i <= 12; i++) {
             var date = new Date(2016, i, 0);
-            var month = {
-                title: date.getMonth() + 1 + '月',
-                days: []
-            };
             for (var j = 1; j <= date.getDate(); j++) {
                 var day = {
                     date: '2016-' + i + '-' + j,
                     value: j == Math.floor(Math.random() * 31) ? -5 : Math.ceil(Math.random() * 160)
                 };
-                month.days.push(day);
+                data.days.push(day);
             }
-            data.months.push(month);
         }
         var dazv = new Dazv.Calendar({
             id: 'calendar01',
@@ -57,6 +52,9 @@
             height: 560,
             viewCfg: {
                 margin: [20, 90, 60, 50]
+            },
+            legendCfg: {
+                left: 7 //左侧图表距离
             },
             data: data
         });

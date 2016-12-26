@@ -4,6 +4,101 @@
     (factory((global.Dazv = global.Dazv || {})));
 }(this, (function (exports) { 'use strict';
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+// 用于处理merge时无法遍历Date等对象的问题
+var BUILTIN_OBJECT = {
+    '[object Function]': 1,
+    '[object RegExp]': 1,
+    '[object Date]': 1,
+    '[object Error]': 1,
+    '[object CanvasGradient]': 1,
+    '[object CanvasPattern]': 1,
+    // For node-canvas
+    '[object Image]': 1,
+    '[object Canvas]': 1
+};
+var TYPED_ARRAY = {
+    '[object Int8Array]': 1,
+    '[object Uint8Array]': 1,
+    '[object Uint8ClampedArray]': 1,
+    '[object Int16Array]': 1,
+    '[object Uint16Array]': 1,
+    '[object Int32Array]': 1,
+    '[object Uint32Array]': 1,
+    '[object Float32Array]': 1,
+    '[object Float64Array]': 1
+};
+var objToString = Object.prototype.toString;
+
+function isObject(value) {
+    var type = typeof value === 'undefined' ? 'undefined' : _typeof(value);
+    return type === 'function' || !!value && type == 'object';
+}
+
+function isArray(value) {
+    return objToString.call(value) === '[object Array]';
+}
+
+function isDom(value) {
+    return (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object' && typeof value.nodeType === 'number' && _typeof(value.ownerDocument) === 'object';
+}
+
+function isBuildInObject(value) {
+    return !!BUILTIN_OBJECT[objToString.call(value)];
+}
+
+function clone(source) {
+    if (source == null || (typeof source === 'undefined' ? 'undefined' : _typeof(source)) != 'object') {
+        return source;
+    }
+
+    var result = source;
+    var typeStr = objToString.call(source);
+
+    if (typeStr === '[object Array]') {
+        result = [];
+        for (var i = 0, len = source.length; i < len; i++) {
+            result[i] = clone(source[i]);
+        }
+    } else if (TYPED_ARRAY[typeStr]) {
+        result = source.constructor.from(source);
+    } else if (!BUILTIN_OBJECT[typeStr] && !isDom(source)) {
+        result = {};
+        for (var key in source) {
+            if (source.hasOwnProperty(key)) {
+                result[key] = clone(source[key]);
+            }
+        }
+    }
+
+    return result;
+}
+
+function merge(target, source, overwrite) {
+    if (!isObject(source) || !isObject(target)) {
+        return overwrite ? clone(source) : target;
+    }
+
+    for (var key in source) {
+        if (source.hasOwnProperty(key)) {
+            var targetProp = target[key];
+            var sourceProp = source[key];
+
+            if (isObject(sourceProp) && isObject(targetProp) && !isArray(sourceProp) && !isArray(targetProp) && !isDom(sourceProp) && !isDom(targetProp) && !isBuildInObject(sourceProp) && !isBuildInObject(targetProp)) {
+                // 如果需要递归覆盖，就递归调用merge
+                merge(targetProp, sourceProp, overwrite);
+            } else if (overwrite || !(key in target)) {
+                // 否则只处理overwrite为true，或者在目标对象中没有此属性的情况
+                // NOTE，在 target[key] 不存在的时候也是直接覆盖
+                target[key] = clone(source[key], true);
+            }
+        }
+    }
+
+    return target;
+}
+
 function guid(id) {
     var t = {};
     id = id || 'v';
@@ -14,53 +109,17 @@ function createDiv() {
     return document.createElement('div');
 }
 
-function toArray(obj) {
-    return obj && obj.length ? Array.prototype.slice.call(obj) : [];
-}
-
-function mix() {
-    var t = this.toArray(arguments),
-        newObj = t[0];
-    if (newObj === !0) {
-        newObj = t[1];
-        for (var i = 2; i < t.length; i++) {
-            var item = t[i];
-            combine(newObj, item);
-        }
-    } else {
-        for (var i = 1; i < t.length; i++) {
-            var item = t[i];
-            for (var a in item) {
-                item.hasOwnProperty(a) && "constructor" !== a && (newObj[a] = item[a]);
-            }
-        }
-        return newObj;
-    }
-}
-
-function combine(dest, source, r) {
-    var a = 5;
-    r = r || 0;
-    for (var i in source) {
-        if (source.hasOwnProperty(i)) {
-            var o = source[i];
-            null !== o && s.isObject(o) ? (s.isObject(dest[i]) || (dest[i] = {}), r < a ? n(dest[i], source[i], r + 1) : dest[i] = source[i]) : s.isArray(o) ? (dest[i] = [], dest[i] = dest[i].concat(o)) : void 0 !== o && (dest[i] = source[i]);
-        }
-    }
-}
-
 var util = {
+    merge: merge,
     guid: guid,
-    createDiv: createDiv,
-    mix: mix,
-    toArray: toArray
+    createDiv: createDiv
 };
 
 var defaults = {
     width: 1000,
     height: 500,
     fontSize: 12,
-    fontFamily: '"Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", SimSun, "sans-serif"',
+    fontFamily: '"Helvetica Neue",Helvetica,"Hiragino Sans GB","STHeitiSC-LIght","Microsoft YaHei","微软雅黑",Arial,sans-serif',
     viewCfg: {
         margin: [20, 60, 60, 60]
     },
@@ -115,25 +174,28 @@ var defaults = {
         cols: 4,
         margin: [0, 10, 8, 0],
         monthStyle: {
-            height: 20,
-            fill: '#f7f7f7',
-            color: '#666'
+            height: 21,
+            fontSize: 12,
+            fontWeight: 'bold',
+            fill: '#F4F4F4',
+            color: '#3c3c3c'
         },
         weekStyle: {
-            height: 18,
+            height: 21,
+            fontSize: 12,
             fill: '#fff',
-            lineWidth: 0.5,
-            stroke: '#eee',
-            color: '#999'
+            color: '#666'
         },
         dayStyle: {
-            color: '#666',
+            fontSize: 12,
+            lineWidth: 0.1,
             stroke: '#ccc',
-            lineWidth: 0.1
+            color: '#3c3c3c'
         },
         itemStyle: {
-            stroke: '#fff',
-            lineWidth: 0.1
+            stroke: '#eee',
+            fill: '#f1f1f1',
+            lineWidth: 1
         }
     },
     legendCfg: {
@@ -155,7 +217,6 @@ var defaults = {
         calculable: true, //是否启用值域漫游，当piecewise时有效，值域显示为线性渐变
         textStyle: {
             fontSize: 12,
-            fontFamily: '"Microsoft YaHei", "微软雅黑", SimSun, "sans-serif"',
             color: '#3c3c3c'
         },
         gradient: {
@@ -394,7 +455,7 @@ Legend.prototype.drawByContinuous = function (context) {
     });
     context.putImageData(palette.getImageData(), this.start.x, this.start.y);
     context.save();
-    context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+    context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
     context.fillStyle = options.textStyle.color;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
@@ -404,7 +465,7 @@ Legend.prototype.drawByContinuous = function (context) {
 };
 
 Legend.prototype.drawByPieceWise = function (context) {
-    var choropleth = new Choropleth(this.options);
+    var choropleth = new Choropleth(this.options); //分段颜色连续
     switch (this.options.itemSymbol) {
         case 'circle':
             this.drawCircle(context);
@@ -436,7 +497,7 @@ Legend.prototype.drawCircle = function (context) {
         context.save();
         context.textAlign = 'left';
         context.textBaseline = "middle";
-        context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+        context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
         context.fillStyle = options.textStyle.color;
         context.fillText(item.level, itemX + radius + options.wordSpaceing, itemY);
         context.restore();
@@ -456,11 +517,10 @@ Legend.prototype.drawRect = function (context) {
         context.save();
         context.textAlign = 'left';
         context.textBaseline = "middle";
-        context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+        context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
         context.fillStyle = options.textStyle.color;
         context.fillText(item.level, itemX + options.itemWidth + options.wordSpaceing, itemY + radius);
         context.restore();
-        // this.getTextWidthHeight(item.level);
     }
 };
 
@@ -485,25 +545,11 @@ Legend.prototype.drawRoundRect = function (context) {
         context.save();
         context.textAlign = 'left';
         context.textBaseline = "middle";
-        context.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
+        context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
         context.fillStyle = options.textStyle.color;
         context.fillText(item.level, itemX + options.itemWidth + options.wordSpaceing, itemY + radius);
         context.restore();
     }
-};
-
-Legend.prototype.getTextWidthHeight = function (text) {
-    var span = document.createElement('span');
-    var options = this.options;
-    span.style.font = options.textStyle.fontSize + 'px ' + options.textStyle.fontFamily;
-    span.innerText = text;
-    document.body.appendChild(span);
-    var widthHeight = {
-        width: span.offsetWidth,
-        height: span.offsetHeight
-    };
-    document.body.removeChild(span);
-    return widthHeight;
 };
 
 /**
@@ -677,8 +723,8 @@ Axis.prototype.convertGridData = function (originData, legendOptions) {
     var self = this;
     var legendOpts = legendOptions;
     originData = originData.length > self.opts.cols * self.opts.rows ? originData.slice(0, self.opts.cols * self.opts.rows) : originData;
-    var axisData = this.axisData;
-    var gridData = this.gridData = [];
+    var axisData = self.axisData;
+    var gridData = self.gridData = [];
     var palette = new Palette({
         width: legendOpts.width,
         height: legendOpts.height,
@@ -731,17 +777,17 @@ Axis.prototype.convertGridData = function (originData, legendOptions) {
 //渲染中间层canvas网格
 Axis.prototype.renderRect = function (ctxMiddle, originData, legendType) {
     var self = this;
-    var gridData = this.convertGridData(originData, legendType);
-    var opts = this.opts,
-        halfWidth = this.gridWidth / 2,
-        halfHeight = this.gridHeight / 2;
+    var gridData = self.convertGridData(originData, legendType);
+    var opts = self.opts,
+        halfWidth = self.gridWidth / 2,
+        halfHeight = self.gridHeight / 2;
     ctxMiddle.save();
     ctxMiddle.textAlign = 'center';
     ctxMiddle.textBaseline = "middle";
     for (var i = 0, len = gridData.length; i < len; i++) {
         var grid = gridData[i];
         ctxMiddle.fillStyle = grid.color == null ? opts.line.fill : grid.color;
-        ctxMiddle.fillRect(grid.x, grid.y, this.gridWidth, this.gridHeight);
+        ctxMiddle.fillRect(grid.x, grid.y, self.gridWidth, self.gridHeight);
         ctxMiddle.save();
         ctxMiddle.font = opts.labels.fontSize + 'px ' + ctxMiddle.fontFamily;
         ctxMiddle.fillStyle = opts.labels.fill;
@@ -791,10 +837,9 @@ ToolTip.prototype.hide = function () {
 };
 
 function Chart(options) {
-    var self = this;
     options = options || {};
-    self.options = util.mix({}, defaults, options);
-    self.init();
+    this.options = util.merge(defaults, options, true);
+    this.init();
 }
 
 Chart.prototype.init = function () {
@@ -812,6 +857,7 @@ Chart.prototype.init = function () {
 
     //图例
     var legend = self.legend = new Legend(options.legendCfg, view);
+    legend.draw(frontCanvas.context);
 
     //坐标系
     var axis = new Axis(options.axisCfg, view);
@@ -883,7 +929,6 @@ Chart.prototype.init = function () {
             }
         }
 
-        legend.draw(ctxFront);
         addEventListener();
     })();
 };

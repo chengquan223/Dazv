@@ -1,3 +1,28 @@
+// 用于处理merge时无法遍历Date等对象的问题
+var BUILTIN_OBJECT = {
+    '[object Function]': 1,
+    '[object RegExp]': 1,
+    '[object Date]': 1,
+    '[object Error]': 1,
+    '[object CanvasGradient]': 1,
+    '[object CanvasPattern]': 1,
+    // For node-canvas
+    '[object Image]': 1,
+    '[object Canvas]': 1
+};
+var TYPED_ARRAY = {
+    '[object Int8Array]': 1,
+    '[object Uint8Array]': 1,
+    '[object Uint8ClampedArray]': 1,
+    '[object Int16Array]': 1,
+    '[object Uint16Array]': 1,
+    '[object Int32Array]': 1,
+    '[object Uint32Array]': 1,
+    '[object Float32Array]': 1,
+    '[object Float64Array]': 1
+};
+var objToString = Object.prototype.toString;
+
 function isObject(value) {
     var type = typeof value;
     return type === 'function' || (!!value && type == 'object');
@@ -5,6 +30,75 @@ function isObject(value) {
 
 function isArray(value) {
     return objToString.call(value) === '[object Array]';
+}
+
+function isDom(value) {
+    return typeof value === 'object' &&
+        typeof value.nodeType === 'number' &&
+        typeof value.ownerDocument === 'object';
+}
+
+function isBuildInObject(value) {
+    return !!BUILTIN_OBJECT[objToString.call(value)];
+}
+
+function clone(source) {
+    if (source == null || typeof source != 'object') {
+        return source;
+    }
+
+    var result = source;
+    var typeStr = objToString.call(source);
+
+    if (typeStr === '[object Array]') {
+        result = [];
+        for (var i = 0, len = source.length; i < len; i++) {
+            result[i] = clone(source[i]);
+        }
+    } else if (TYPED_ARRAY[typeStr]) {
+        result = source.constructor.from(source);
+    } else if (!BUILTIN_OBJECT[typeStr] && !isDom(source)) {
+        result = {};
+        for (var key in source) {
+            if (source.hasOwnProperty(key)) {
+                result[key] = clone(source[key]);
+            }
+        }
+    }
+
+    return result;
+}
+
+function merge(target, source, overwrite) {
+    if (!isObject(source) || !isObject(target)) {
+        return overwrite ? clone(source) : target;
+    }
+
+    for (var key in source) {
+        if (source.hasOwnProperty(key)) {
+            var targetProp = target[key];
+            var sourceProp = source[key];
+
+            if (isObject(sourceProp) &&
+                isObject(targetProp) &&
+                !isArray(sourceProp) &&
+                !isArray(targetProp) &&
+                !isDom(sourceProp) &&
+                !isDom(targetProp) &&
+                !isBuildInObject(sourceProp) &&
+                !isBuildInObject(targetProp)
+            ) {
+                // 如果需要递归覆盖，就递归调用merge
+                merge(targetProp, sourceProp, overwrite);
+            } else if (overwrite || !(key in target)) {
+                // 否则只处理overwrite为true，或者在目标对象中没有此属性的情况
+                // NOTE，在 target[key] 不存在的时候也是直接覆盖
+                target[key] = clone(source[key], true);
+            }
+        }
+    }
+
+    return target;
 }
 
 function guid(id) {
@@ -17,44 +111,8 @@ function createDiv() {
     return document.createElement('div');
 }
 
-function toArray(obj) {
-    return obj && obj.length ? Array.prototype.slice.call(obj) : [];
-}
-
-function mix() {
-    var t = this.toArray(arguments),
-        newObj = t[0];
-    if (newObj === !0) {
-        newObj = t[1];
-        for (var i = 2; i < t.length; i++) {
-            var item = t[i];
-            combine(newObj, item);
-        }
-    } else {
-        for (var i = 1; i < t.length; i++) {
-            var item = t[i];
-            for (var a in item)
-                item.hasOwnProperty(a) && "constructor" !== a && (newObj[a] = item[a]);
-        }
-        return newObj;
-    }
-}
-
-function combine(dest, source, r) {
-    var a = 5;
-    r = r || 0;
-    for (var i in source)
-        if (source.hasOwnProperty(i)) {
-            var o = source[i];
-            null !== o && s.isObject(o) ? (s.isObject(dest[i]) || (dest[i] = {}),
-                r < a ? n(dest[i], source[i], r + 1) : dest[i] = source[i]) : s.isArray(o) ? (dest[i] = [],
-                dest[i] = dest[i].concat(o)) : void 0 !== o && (dest[i] = source[i])
-        }
-}
-
 export default {
+    merge: merge,
     guid: guid,
     createDiv: createDiv,
-    mix: mix,
-    toArray: toArray,
 };

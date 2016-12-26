@@ -8,10 +8,9 @@ import Axis from '../core/coord/Axis';
 import ToolTip from '../core/tooltip/ToolTip';
 
 function Chart(options) {
-    var self = this;
     options = options || {};
-    self.options = util.mix({}, defaults, options);
-    self.init();
+    this.options = util.merge(defaults, options, true);
+    this.init();
 }
 
 Chart.prototype.init = function () {
@@ -29,6 +28,7 @@ Chart.prototype.init = function () {
 
     //图例
     var legend = self.legend = new Legend(options.legendCfg, view);
+    legend.draw(frontCanvas.context);
 
     //坐标系
     var axis = new Axis(options.axisCfg, view);
@@ -100,7 +100,6 @@ Chart.prototype.init = function () {
             }
         }
 
-        legend.draw(ctxFront);
         addEventListener();
     })();
 }
