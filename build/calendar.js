@@ -554,11 +554,10 @@ Legend.prototype.drawSymbol = function (context, type) {
     });
 };
 
-Legend.prototype.move = function (point, canvas) {
+Legend.prototype.getLevel = function (point) {
     var options = this.options;
     var levels = this.levels;
     var flag1, flag2;
-
     for (var i = 0, l = levels.length; i < l; i++) {
         var level = levels[i];
         //圆、矩形、圆角矩形
@@ -597,10 +596,23 @@ Legend.prototype.move = function (point, canvas) {
         });
 
         if (flag1 || flag2) {
-            canvas.style.cursor = 'pointer';
-            break;
+            return level;
         }
+    }
+};
+
+Legend.prototype.move = function (point, canvas) {
+    if (this.getLevel(point)) {
+        canvas.style.cursor = 'pointer';
+    } else {
         canvas.style.cursor = 'default';
+    }
+};
+
+Legend.prototype.click = function (point, canvas) {
+    var level = this.getLevel(point);
+    if (level) {
+        console.log(level);
     }
 };
 
@@ -923,6 +935,9 @@ Calendar.prototype.init = function () {
                 frontCanvas.canvasDOM.addEventListener('mousemove', move, false);
                 toolTip.dom.addEventListener('mousemove', move, false);
             }
+
+            frontCanvas.canvasDOM.addEventListener('mousemove', legendMove, false);
+            frontCanvas.canvasDOM.addEventListener('click', legendClick, false);
         }
 
         //鼠标进入，添加遮罩层
@@ -951,7 +966,6 @@ Calendar.prototype.init = function () {
                 x: e.clientX - bbox.left,
                 y: e.clientY - bbox.top
             };
-            legend.move(point, frontCanvas.canvasDOM);
             var grid = axis.getGrid(point);
             if (grid) {
                 if (index == grid.i) {
@@ -970,6 +984,28 @@ Calendar.prototype.init = function () {
                 ctxFront.clearRect(axis.start.x, axis.start.y, axis.viewWidth, axis.viewHeight);
                 toolTip.hide();
                 index = -1;
+            }
+        }
+
+        function legendMove(e) {
+            e.stopPropagation();
+            var point = {
+                x: e.clientX - bbox.left,
+                y: e.clientY - bbox.top
+            };
+            if (legend.options.type === 'piecewise') {
+                legend.move(point, frontCanvas.canvasDOM);
+            }
+        }
+
+        function legendClick(e) {
+            e.stopPropagation();
+            var point = {
+                x: e.clientX - bbox.left,
+                y: e.clientY - bbox.top
+            };
+            if (legend.options.type === 'piecewise') {
+                legend.click(point, frontCanvas.canvasDOM);
             }
         }
 

@@ -123,11 +123,10 @@ Legend.prototype.drawSymbol = function (context, type) {
     });
 }
 
-Legend.prototype.move = function (point, canvas) {
+Legend.prototype.getLevel = function (point) {
     var options = this.options;
     var levels = this.levels;
     var flag1, flag2;
-
     for (var i = 0, l = levels.length; i < l; i++) {
         var level = levels[i];
         //圆、矩形、圆角矩形
@@ -166,10 +165,23 @@ Legend.prototype.move = function (point, canvas) {
         });
 
         if (flag1 || flag2) {
-            canvas.style.cursor = 'pointer';
-            break;
+            return level;
         }
+    }
+}
+
+Legend.prototype.move = function (point, canvas) {
+    if (this.getLevel(point)) {
+        canvas.style.cursor = 'pointer';
+    } else {
         canvas.style.cursor = 'default';
+    }
+}
+
+Legend.prototype.click = function (point, canvas) {
+    var level = this.getLevel(point);
+    if (level) {
+        console.log(level);
     }
 }
 

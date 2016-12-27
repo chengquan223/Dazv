@@ -67,6 +67,9 @@ Calendar.prototype.init = function () {
                 frontCanvas.canvasDOM.addEventListener('mousemove', move, false);
                 toolTip.dom.addEventListener('mousemove', move, false);
             }
+
+            frontCanvas.canvasDOM.addEventListener('mousemove', legendMove, false);
+            frontCanvas.canvasDOM.addEventListener('click', legendClick, false);
         }
 
         //鼠标进入，添加遮罩层
@@ -95,7 +98,6 @@ Calendar.prototype.init = function () {
                 x: e.clientX - bbox.left,
                 y: e.clientY - bbox.top
             };
-            legend.move(point, frontCanvas.canvasDOM);
             var grid = axis.getGrid(point);
             if (grid) {
                 if (index == grid.i) {
@@ -114,6 +116,28 @@ Calendar.prototype.init = function () {
                 ctxFront.clearRect(axis.start.x, axis.start.y, axis.viewWidth, axis.viewHeight);
                 toolTip.hide();
                 index = -1;
+            }
+        }
+
+        function legendMove(e) {
+            e.stopPropagation();
+            var point = {
+                x: e.clientX - bbox.left,
+                y: e.clientY - bbox.top
+            };
+            if (legend.options.type === 'piecewise') {
+                legend.move(point, frontCanvas.canvasDOM);
+            }
+        }
+
+        function legendClick(e) {
+            e.stopPropagation();
+            var point = {
+                x: e.clientX - bbox.left,
+                y: e.clientY - bbox.top
+            };
+            if (legend.options.type === 'piecewise') {
+                legend.click(point, frontCanvas.canvasDOM);
             }
         }
 
