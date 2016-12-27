@@ -1,5 +1,6 @@
 import Palette from '../data-range/Palette';
 import Choropleth from '../data-range/Choropleth';
+import util from '../../tool/util';
 
 function Legend(options, view) {
     this.options = options;
@@ -22,16 +23,16 @@ Legend.prototype.draw = function (context) {
     if (this.options.show) {
         switch (this.options.type) {
             case 'piecewise':
-                this.drawByPieceWise(context);
+                this.renderByPieceWise(context);
                 break;
             default:
-                this.drawByContinuous(context);
+                this.renderByContinuous(context);
                 break;
         }
     }
 }
 
-Legend.prototype.drawByContinuous = function (context) {
+Legend.prototype.renderByContinuous = function (context) {
     var options = this.options;
     //调色板
     var palette = new Palette({
@@ -52,91 +53,123 @@ Legend.prototype.drawByContinuous = function (context) {
     context.restore();
 }
 
-Legend.prototype.drawByPieceWise = function (context) {
-    var choropleth = new Choropleth(this.options); //分段颜色连续
-    switch (this.options.itemSymbol) {
-        case 'circle':
-            this.drawCircle(context);
-            break;
-        case 'rect':
-            this.drawRect(context);
-            break;
-        case 'roundRect':
-            this.drawRoundRect(context);
-            break;
-        default:
-            break;
+Legend.prototype.renderByPieceWise = function (context) {
+    this.addLevel();
+    this.drawSymbol(context, this.options.itemSymbol);
+}
+
+Legend.prototype.addLevel = function () {
+    var choropleth = new Choropleth(this.options); //分段颜色连续，必需，定义变量未使用，写法有待优化
+    var options = this.options;
+    var levels = this.levels = [];
+    var radius = options.itemSymbol === 'circle' ? options.itemHeight / 2 : 0;
+    for (var i = 0; i < options.splitList.length; i++) {
+        var split = options.splitList[i];
+        levels.push({
+            x: this.start.x + radius,
+            y: this.end.y - options.itemHeight * i - options.itemGap * i + radius,
+            fontX: this.start.x + options.itemWidth - radius + options.wordSpaceing,
+            fontY: this.end.y - options.itemHeight * i - options.itemGap * i + radius,
+            start: split.start,
+            end: split.end,
+            text: split.level,
+            color: split.color,
+        });
     }
 }
 
-Legend.prototype.drawCircle = function (context) {
+Legend.prototype.drawSymbol = function (context, type) {
     var options = this.options;
-    var radius = options.itemHeight / 2;
-    for (var i = 0; i < options.splitList.length; i++) {
-        var item = options.splitList[i];
-        var itemX = this.start.x + radius;
-        var itemY = this.end.y - options.itemHeight * i - options.itemGap * i - radius;
-        context.fillStyle = item.color;
+    this.levels.forEach(function (level, i) {
+        var fontX, fontY;
         context.beginPath();
-        context.arc(itemX, itemY, radius, 0, Math.PI * 2, true);
-        context.closePath();
+        context.fillStyle = level.color;
+        switch (type) {
+            case 'circle':
+                context.arc(level.x, level.y, options.itemHeight / 2, 0, Math.PI * 2);
+                fontX = level.x + options.itemHeight / 2 + options.wordSpaceing;
+                fontY = level.y;
+                break;
+            case 'rect':
+                context.rect(level.x, level.y, options.itemWidth, options.itemHeight);
+                fontX = level.x + options.itemWidth + options.wordSpaceing;
+                fontY = level.y + options.itemHeight / 2;
+                break;
+            case 'roundRect':
+                var radius = 3; //圆角半径
+                context.moveTo(level.x + radius, level.y);
+                context.arcTo(level.x + options.itemWidth, level.y, level.x + options.itemWidth, level.y + options.itemHeight, radius);
+                context.arcTo(level.x + options.itemWidth, level.y + options.itemHeight, level.x, level.y + options.itemHeight, radius);
+                context.arcTo(level.x, level.y + options.itemHeight, level.x, level.y, radius);
+                context.arcTo(level.x, level.y, level.x + radius, level.y, radius);
+                fontX = level.x + options.itemWidth + options.wordSpaceing;
+                fontY = level.y + options.itemHeight / 2;
+                break;
+            default:
+                break;
+        }
         context.fill();
+        context.closePath();
 
         context.save();
         context.textAlign = 'left';
         context.textBaseline = "middle";
         context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
         context.fillStyle = options.textStyle.color;
-        context.fillText(item.level, itemX + radius + options.wordSpaceing, itemY);
+        context.fillText(level.text, fontX, fontY);
+        level.fontWidth = context.measureText(level.text).width;
+        level.fontHeight = options.textStyle.fontSize < 12 ? 12 : options.textStyle.fontSize;
         context.restore();
-    }
+    });
 }
 
-Legend.prototype.drawRect = function (context) {
+Legend.prototype.move = function (point, canvas) {
     var options = this.options;
-    var radius = options.itemHeight / 2;
-    for (var i = 0; i < options.splitList.length; i++) {
-        var item = options.splitList[i];
-        var itemX = this.start.x;
-        var itemY = this.end.y - options.itemHeight * (i + 1) - options.itemGap * i;
-        context.fillStyle = item.color;
-        context.fillRect(itemX, itemY, options.itemWidth, options.itemHeight);
+    var levels = this.levels;
+    var flag1, flag2;
 
-        context.save();
-        context.textAlign = 'left';
-        context.textBaseline = "middle";
-        context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
-        context.fillStyle = options.textStyle.color;
-        context.fillText(item.level, itemX + options.itemWidth + options.wordSpaceing, itemY + radius);
-        context.restore();
-    }
-}
+    for (var i = 0, l = levels.length; i < l; i++) {
+        var level = levels[i];
+        //圆、矩形、圆角矩形
+        switch (options.itemSymbol) {
+            case 'circle':
+                var point2 = {
+                    x: level.x,
+                    y: level.y
+                };
+                flag1 = util.isPointInCircle(point, point2, options.itemHeight / 2);
+                break;
+            default:
+                var bound = {
+                    wn: {
+                        x: level.x,
+                        y: level.y
+                    },
+                    es: {
+                        x: level.x + options.itemWidth,
+                        y: level.y + options.itemHeight
+                    }
+                };
+                flag1 = util.isPointInRect(point, bound);
+                break;
+        }
 
-Legend.prototype.drawRoundRect = function (context) {
-    var options = this.options;
-    var radius = options.itemHeight / 2;
-    var r = 3;
-    for (var i = 0; i < options.splitList.length; i++) {
-        var item = options.splitList[i];
-        var itemX = this.start.x;
-        var itemY = this.end.y - options.itemHeight * (i + 1) - options.itemGap * i;
-        context.fillStyle = item.color;
-        context.beginPath();
-        context.moveTo(itemX + r, itemY);
-        context.arcTo(itemX + options.itemWidth, itemY, itemX + options.itemWidth, itemY + options.itemHeight, r);
-        context.arcTo(itemX + options.itemWidth, itemY + options.itemHeight, itemX, itemY + options.itemHeight, r);
-        context.arcTo(itemX, itemY + options.itemHeight, itemX, itemY, r);
-        context.arcTo(itemX, itemY, itemX + r, itemY, r);
-        context.closePath();
-        context.fill();
+        flag2 = util.isPointInRect(point, {
+            wn: {
+                x: level.fontX,
+                y: level.fontY
+            },
+            es: {
+                x: level.fontX + level.fontWidth,
+                y: level.fontY + level.fontHeight
+            }
+        });
 
-        context.save();
-        context.textAlign = 'left';
-        context.textBaseline = "middle";
-        context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
-        context.fillStyle = options.textStyle.color;
-        context.fillText(item.level, itemX + options.itemWidth + options.wordSpaceing, itemY + radius);
-        context.restore();
+        if (flag1 || flag2) {
+            canvas.style.cursor = 'pointer';
+            break;
+        }
+        canvas.style.cursor = 'default';
     }
 }
 

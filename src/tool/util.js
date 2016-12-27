@@ -111,8 +111,29 @@ function createDiv() {
     return document.createElement('div');
 }
 
+//是否在矩形内
+function isPointInRect(point, bound) {
+    var wn = bound.wn; //西北
+    var es = bound.es; //东南
+    return (point.x >= wn.x && point.x <= es.x && point.y >= wn.y && point.y <= es.y);
+}
+
+//是否在园内
+function isPointInCircle(point, center, radius) {
+    var dis = utilLib.getDistance(point, center);
+    return dis <= radius;
+}
+
+//两点间距离
+function getDistance(point1, point2) {
+    return Math.sqrt(Math.pow(point1.x - point2.x, 2) + Math.pow(point1.y - point2.y, 2));
+}
+
 export default {
     merge: merge,
     guid: guid,
     createDiv: createDiv,
+    isPointInRect: isPointInRect,
+    isPointInCircle: isPointInCircle,
+    getDistance: getDistance
 };

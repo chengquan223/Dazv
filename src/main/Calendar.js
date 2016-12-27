@@ -90,9 +90,13 @@ Calendar.prototype.init = function () {
         };
 
         function move(e) {
-            var x = e.clientX - bbox.left;
-            var y = e.clientY - bbox.top;
-            var grid = axis.getGrid(x, y);
+            e.stopPropagation();
+            var point = {
+                x: e.clientX - bbox.left,
+                y: e.clientY - bbox.top
+            };
+            legend.move(point, frontCanvas.canvasDOM);
+            var grid = axis.getGrid(point);
             if (grid) {
                 if (index == grid.i) {
                     return;

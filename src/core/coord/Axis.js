@@ -147,11 +147,11 @@ Axis.prototype.drawRectIntersect = function (ctxBack) {
 }
 
 //获取单元格
-Axis.prototype.getGrid = function (x, y) {
+Axis.prototype.getGrid = function (point) {
     var dataList = this.gridData;
     for (var i = 0, len = dataList.length; i < len; i++) {
         var grid = dataList[i];
-        if (x >= grid.x && x < grid.x + this.gridWidth && y >= grid.y && y < grid.y + this.gridHeight) {
+        if (point.x >= grid.x && point.x < grid.x + grid.w && point.y >= grid.y && point.y < grid.y + grid.h) {
             return grid;
         }
     }

@@ -123,11 +123,11 @@ AxisCalendar.prototype.draw = function (ctx, year) {
 }
 
 //获取单元格
-AxisCalendar.prototype.getGrid = function (x, y) {
+AxisCalendar.prototype.getGrid = function (point) {
     var dataList = this.gridData;
     for (var i = 0, len = dataList.length; i < len; i++) {
         var grid = dataList[i];
-        if (x >= grid.x && x < grid.x + grid.w && y >= grid.y && y < grid.y + grid.h) {
+        if (point.x >= grid.x && point.x < grid.x + grid.w && point.y >= grid.y && point.y < grid.y + grid.h) {
             return grid;
         }
     }
