@@ -1,5 +1,5 @@
 # dazv
-canvas data visualization
+基于canvas的可视化图表
 
 ## 简介
 
