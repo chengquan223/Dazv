@@ -6,6 +6,7 @@ import View from '../core/coord/View';
 import Legend from '../core/legend/Legend';
 import AxisCalendar from '../core/coord/AxisCalendar';
 import ToolTip from '../core/tooltip/ToolTip';
+import clear from '../canvas/clear';
 
 function createCanvasLayer(options, capture) {
     var canvasLayer = new CanvasLayer({
@@ -126,7 +127,25 @@ Calendar.prototype.init = function () {
                 y: e.clientY - bbox.top
             };
             if (legend.options.type === 'piecewise') {
-                legend.click(point, ctxFront);
+                var level = legend.getLevel(point);
+                if (level) {
+                    clear(ctxFront);
+                    if (level.show) {
+                        level.show = false;
+                        legend.drawSymbol(ctxFront);
+                        clear(middleCanvas.context);
+                        var removeList = axis.updateRemoveList(level);
+                        var data = axis.removeData();
+                        axis.drawRect(middleCanvas.context, data);
+                    } else {
+                        level.show = true;
+                        legend.drawSymbol(ctxFront);
+                        var removeList = axis.updateRemoveList(level);
+                        var data = axis.removeData();
+                        axis.drawRect(middleCanvas.context, data);
+                    }
+                    console.log(level);
+                }
             }
         }
 

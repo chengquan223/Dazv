@@ -212,28 +212,44 @@ AxisCalendar.prototype.drawRect = function (context, data) {
     context.restore();
 }
 
-//middleCanvas渲染
-AxisCalendar.prototype.renderRect = function (ctxMiddle, originData, legendOpts) {
+AxisCalendar.prototype.removeData = function () {
+    //原数组，新数组
     var self = this;
-    var gridData = self.convertGridData(originData, legendOpts);
+    var data = [];
+    if (self.removeList.length == 0) return this.gridData;
+    self.gridData.forEach(function (grid, i) {
 
-    var opts = self.opts,
-        halfWidth = self.dayWidth / 2,
-        halfHeight = self.dayHeight / 2;
-    ctxMiddle.save();
-    ctxMiddle.textAlign = 'center';
-    ctxMiddle.textBaseline = "middle";
-    ctxMiddle.font = opts.dayStyle.fontSize + 'px ' + ctxMiddle.fontFamily;
-    for (var i = 0, len = gridData.length; i < len; i++) {
-        var grid = gridData[i];
-        ctxMiddle.fillStyle = grid.color == null ? opts.itemStyle.fill : grid.color;
-        ctxMiddle.fillRect(grid.x, grid.y, grid.w, grid.h);
-        ctxMiddle.save();
-        ctxMiddle.fillStyle = opts.dayStyle.color;
-        ctxMiddle.fillText(grid.day, grid.x + parseInt(halfWidth), grid.y + parseInt(halfHeight));
-        ctxMiddle.restore();
-    }
-    ctxMiddle.restore();
+        self.removeList.forEach(function (level, j) {
+            if ((level.start === undefined || level.start !== undefined && grid.value > level.start) &&
+                (level.end === undefined || level.end !== undefined && grid.value <= level.end) && (data.indexOf(grid) == -1)) {} else {
+                data.push(grid);
+            }
+        });
+    });
+    return data;
 }
+
+AxisCalendar.prototype.updateRemoveList = function (level) {
+    this.removeList = this.removeList || [];
+    if (level.show) {
+        this.removeList.remove(level);
+    } else {
+        this.removeList.push(level);
+    }
+}
+
+Array.prototype.indexOf = function (val) {
+    for (var i = 0; i < this.length; i++) {
+        if (this[i] == val) return i;
+    }
+    return -1;
+};
+
+Array.prototype.remove = function (val) {
+    var index = this.indexOf(val);
+    if (index > -1) {
+        this.splice(index, 1);
+    }
+};
 
 export default AxisCalendar;
