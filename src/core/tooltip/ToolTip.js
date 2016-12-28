@@ -6,7 +6,6 @@ function ToolTip(container, options) {
     this.container = container;
     this.style = options.style;
     this.isShow = options.isShow;
-    this.triggerOn = options.triggerOn;
     this.create();
 }
 

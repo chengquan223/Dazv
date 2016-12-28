@@ -150,7 +150,6 @@ var defaults = {
     toolTip: {
         isShow: true,
         position: [5, 5],
-        triggerOn: 'mousemove', //触发条件mousemove，click
         style: 'position:absolute;visibility:hidden;background-Color:rgba(0,0,0,0.7);transition:top 0.2s,left 0.2s;border-radius: 2px;color:#fff;line-height: 16px;padding:5px 10px;'
     }
 };

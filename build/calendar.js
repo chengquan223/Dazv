@@ -116,9 +116,9 @@ function isPointInRect(point, bound) {
     return point.x >= wn.x && point.x <= es.x && point.y >= wn.y && point.y <= es.y;
 }
 
-//是否在园内
+//是否在圆内
 function isPointInCircle(point, center, radius) {
-    var dis = utilLib.getDistance(point, center);
+    var dis = getDistance(point, center);
     return dis <= radius;
 }
 
@@ -285,7 +285,6 @@ var defaults = {
     toolTip: {
         isShow: true,
         position: [5, 5],
-        triggerOn: 'mousemove', //触发条件mousemove，click
         style: 'position:absolute;visibility:hidden;background-Color:rgba(0,0,0,0.7);transition:top 0.2s,left 0.2s;border-radius: 2px;color:#fff;line-height: 16px;padding:5px 10px;'
     }
 };
@@ -330,6 +329,8 @@ CanvasLayer.prototype.init = function () {
     this.containerDOM.appendChild(canvasDOM);
     this.canvasDOM = canvasDOM;
     context.fontFamily = this.fontFamily;
+    context.textAlign = 'center';
+    context.textBaseline = "middle";
     this.context = context;
 };
 
@@ -433,6 +434,10 @@ Choropleth.prototype.get = function (count) {
     return split;
 };
 
+var clear = function (context) {
+    context && context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+};
+
 function Legend(options, view) {
     this.options = options;
     this.init(view);
@@ -485,46 +490,48 @@ Legend.prototype.renderByContinuous = function (context) {
 };
 
 Legend.prototype.renderByPieceWise = function (context) {
-    this.addLevel();
-    this.drawSymbol(context, this.options.itemSymbol);
+    var self = this;
+    self.initLevel();
+    self.drawSymbol(context);
 };
 
-Legend.prototype.addLevel = function () {
+Legend.prototype.initLevel = function () {
     var choropleth = new Choropleth(this.options); //分段颜色连续，必需，定义变量未使用，写法有待优化
     var options = this.options;
     var levels = this.levels = [];
-    var radius = options.itemSymbol === 'circle' ? options.itemHeight / 2 : 0;
+    var radius = 0;
+    if (options.itemSymbol === 'circle') {
+        radius = options.itemHeight / 2;
+        options.itemWidth = 0;
+    }
     for (var i = 0; i < options.splitList.length; i++) {
         var split = options.splitList[i];
         levels.push({
             x: this.start.x + radius,
             y: this.end.y - options.itemHeight * i - options.itemGap * i + radius,
-            fontX: this.start.x + options.itemWidth - radius + options.wordSpaceing,
-            fontY: this.end.y - options.itemHeight * i - options.itemGap * i + radius,
+            fontX: this.start.x + radius * 2 + options.itemWidth + options.wordSpaceing,
+            fontY: this.end.y - options.itemHeight * i - options.itemGap * i,
             start: split.start,
             end: split.end,
             text: split.level,
-            color: split.color
+            color: split.color,
+            hideColor: '#ccc',
+            show: true
         });
     }
 };
 
-Legend.prototype.drawSymbol = function (context, type) {
+Legend.prototype.drawSymbol = function (context) {
     var options = this.options;
     this.levels.forEach(function (level, i) {
-        var fontX, fontY;
         context.beginPath();
-        context.fillStyle = level.color;
-        switch (type) {
+        context.fillStyle = level.show ? level.color : level.hideColor;
+        switch (options.itemSymbol) {
             case 'circle':
                 context.arc(level.x, level.y, options.itemHeight / 2, 0, Math.PI * 2);
-                fontX = level.x + options.itemHeight / 2 + options.wordSpaceing;
-                fontY = level.y;
                 break;
             case 'rect':
                 context.rect(level.x, level.y, options.itemWidth, options.itemHeight);
-                fontX = level.x + options.itemWidth + options.wordSpaceing;
-                fontY = level.y + options.itemHeight / 2;
                 break;
             case 'roundRect':
                 var radius = 3; //圆角半径
@@ -533,8 +540,6 @@ Legend.prototype.drawSymbol = function (context, type) {
                 context.arcTo(level.x + options.itemWidth, level.y + options.itemHeight, level.x, level.y + options.itemHeight, radius);
                 context.arcTo(level.x, level.y + options.itemHeight, level.x, level.y, radius);
                 context.arcTo(level.x, level.y, level.x + radius, level.y, radius);
-                fontX = level.x + options.itemWidth + options.wordSpaceing;
-                fontY = level.y + options.itemHeight / 2;
                 break;
             default:
                 break;
@@ -546,10 +551,11 @@ Legend.prototype.drawSymbol = function (context, type) {
         context.textAlign = 'left';
         context.textBaseline = "middle";
         context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
-        context.fillStyle = options.textStyle.color;
-        context.fillText(level.text, fontX, fontY);
         level.fontWidth = context.measureText(level.text).width;
         level.fontHeight = options.textStyle.fontSize < 12 ? 12 : options.textStyle.fontSize;
+        context.fillStyle = level.show ? options.textStyle.color : level.hideColor;
+        context.fillText(level.text, level.fontX, level.fontY + level.fontHeight / 2);
+
         context.restore();
     });
 };
@@ -609,9 +615,18 @@ Legend.prototype.move = function (point, canvas) {
     }
 };
 
-Legend.prototype.click = function (point, canvas) {
+Legend.prototype.click = function (point, context) {
     var level = this.getLevel(point);
     if (level) {
+        clear(context);
+        if (level.show) {
+            //当前true则
+            level.show = false;
+            this.drawSymbol(context);
+        } else {
+            level.show = true;
+            this.drawSymbol(context);
+        }
         console.log(level);
     }
 };
@@ -762,7 +777,7 @@ AxisCalendar.prototype.getGrid = function (point) {
 AxisCalendar.prototype.convertGridData = function (originData, legendOpts) {
     var self = this;
     var axisData = self.axisData;
-    var gridData = self.gridData = [];
+    var gridData = [];
     var palette = new Palette({
         width: legendOpts.width,
         height: legendOpts.height,
@@ -812,6 +827,31 @@ AxisCalendar.prototype.convertGridData = function (originData, legendOpts) {
     return gridData;
 };
 
+AxisCalendar.prototype.render = function (context, originData, legendOpts) {
+    this.gridData = this.convertGridData(originData, legendOpts);
+    this.drawRect(context, this.gridData);
+};
+
+//middleCanvas渲染
+AxisCalendar.prototype.drawRect = function (context, data) {
+    var self = this;
+    var options = self.opts;
+    var width = self.dayWidth / 2;
+    var height = self.dayHeight / 2;
+    context.save();
+    context.font = options.dayStyle.fontSize + 'px ' + context.fontFamily;
+    data.forEach(function (grid, i) {
+        context.fillStyle = grid.color == null ? options.itemStyle.fill : grid.color;
+        context.fillRect(grid.x, grid.y, grid.w, grid.h);
+
+        context.save();
+        context.fillStyle = options.dayStyle.color;
+        context.fillText(grid.day, grid.x + width, grid.y + height);
+        context.restore();
+    });
+    context.restore();
+};
+
 //middleCanvas渲染
 AxisCalendar.prototype.renderRect = function (ctxMiddle, originData, legendOpts) {
     var self = this;
@@ -844,7 +884,6 @@ function ToolTip(container, options) {
     this.container = container;
     this.style = options.style;
     this.isShow = options.isShow;
-    this.triggerOn = options.triggerOn;
     this.create();
 }
 
@@ -916,7 +955,7 @@ Calendar.prototype.init = function () {
     axis.draw(backCanvas.context, options.data.year);
 
     //渲染中间层，文字、颜色
-    axis.renderRect(middleCanvas.context, this.options.data.days, legend.options);
+    axis.render(middleCanvas.context, this.options.data.days, legend.options);
 
     //提示信息框
     var toolTip = new ToolTip(self.container, options.toolTip);
@@ -928,16 +967,9 @@ Calendar.prototype.init = function () {
         var ctxFront = frontCanvas.context;
 
         function addEventListener() {
-            if (toolTip.triggerOn === 'click') {
-                frontCanvas.canvasDOM.addEventListener('click', move, false);
-                toolTip.dom.addEventListener('click', move, false);
-            } else {
-                frontCanvas.canvasDOM.addEventListener('mousemove', move, false);
-                toolTip.dom.addEventListener('mousemove', move, false);
-            }
-
-            frontCanvas.canvasDOM.addEventListener('mousemove', legendMove, false);
+            frontCanvas.canvasDOM.addEventListener('mousemove', move, false);
             frontCanvas.canvasDOM.addEventListener('click', legendClick, false);
+            toolTip.dom.addEventListener('mousemove', move, false);
         }
 
         //鼠标进入，添加遮罩层
@@ -966,6 +998,7 @@ Calendar.prototype.init = function () {
                 x: e.clientX - bbox.left,
                 y: e.clientY - bbox.top
             };
+            legendMove(point);
             var grid = axis.getGrid(point);
             if (grid) {
                 if (index == grid.i) {
@@ -987,12 +1020,7 @@ Calendar.prototype.init = function () {
             }
         }
 
-        function legendMove(e) {
-            e.stopPropagation();
-            var point = {
-                x: e.clientX - bbox.left,
-                y: e.clientY - bbox.top
-            };
+        function legendMove(point) {
             if (legend.options.type === 'piecewise') {
                 legend.move(point, frontCanvas.canvasDOM);
             }
@@ -1005,7 +1033,7 @@ Calendar.prototype.init = function () {
                 y: e.clientY - bbox.top
             };
             if (legend.options.type === 'piecewise') {
-                legend.click(point, frontCanvas.canvasDOM);
+                legend.click(point, ctxFront);
             }
         }
 

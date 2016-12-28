@@ -118,9 +118,9 @@ function isPointInRect(point, bound) {
     return (point.x >= wn.x && point.x <= es.x && point.y >= wn.y && point.y <= es.y);
 }
 
-//是否在园内
+//是否在圆内
 function isPointInCircle(point, center, radius) {
-    var dis = utilLib.getDistance(point, center);
+    var dis = getDistance(point, center);
     return dis <= radius;
 }
 

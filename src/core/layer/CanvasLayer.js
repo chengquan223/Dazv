@@ -18,6 +18,8 @@ CanvasLayer.prototype.init = function () {
     this.containerDOM.appendChild(canvasDOM);
     this.canvasDOM = canvasDOM;
     context.fontFamily = this.fontFamily;
+    context.textAlign = 'center';
+    context.textBaseline = "middle";
     this.context = context;
 }
 

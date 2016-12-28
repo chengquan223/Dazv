@@ -137,7 +137,7 @@ AxisCalendar.prototype.getGrid = function (point) {
 AxisCalendar.prototype.convertGridData = function (originData, legendOpts) {
     var self = this;
     var axisData = self.axisData;
-    var gridData = self.gridData = [];
+    var gridData = [];
     var palette = new Palette({
         width: legendOpts.width,
         height: legendOpts.height,
@@ -185,6 +185,31 @@ AxisCalendar.prototype.convertGridData = function (originData, legendOpts) {
         gridData.push(grid);
     });
     return gridData;
+}
+
+AxisCalendar.prototype.render = function (context, originData, legendOpts) {
+    this.gridData = this.convertGridData(originData, legendOpts);
+    this.drawRect(context, this.gridData);
+}
+
+//middleCanvas渲染
+AxisCalendar.prototype.drawRect = function (context, data) {
+    var self = this;
+    var options = self.opts;
+    var width = self.dayWidth / 2;
+    var height = self.dayHeight / 2;
+    context.save();
+    context.font = options.dayStyle.fontSize + 'px ' + context.fontFamily;
+    data.forEach(function (grid, i) {
+        context.fillStyle = grid.color == null ? options.itemStyle.fill : grid.color;
+        context.fillRect(grid.x, grid.y, grid.w, grid.h);
+
+        context.save();
+        context.fillStyle = options.dayStyle.color;
+        context.fillText(grid.day, grid.x + width, grid.y + height);
+        context.restore();
+    });
+    context.restore();
 }
 
 //middleCanvas渲染

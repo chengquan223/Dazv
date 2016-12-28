@@ -1,6 +1,7 @@
 import Palette from '../data-range/Palette';
 import Choropleth from '../data-range/Choropleth';
 import util from '../../tool/util';
+import clear from '../../canvas/clear';
 
 function Legend(options, view) {
     this.options = options;
@@ -54,46 +55,48 @@ Legend.prototype.renderByContinuous = function (context) {
 }
 
 Legend.prototype.renderByPieceWise = function (context) {
-    this.addLevel();
-    this.drawSymbol(context, this.options.itemSymbol);
+    var self = this;
+    self.initLevel();
+    self.drawSymbol(context);
 }
 
-Legend.prototype.addLevel = function () {
+Legend.prototype.initLevel = function () {
     var choropleth = new Choropleth(this.options); //分段颜色连续，必需，定义变量未使用，写法有待优化
     var options = this.options;
     var levels = this.levels = [];
-    var radius = options.itemSymbol === 'circle' ? options.itemHeight / 2 : 0;
+    var radius = 0;
+    if (options.itemSymbol === 'circle') {
+        radius = options.itemHeight / 2;
+        options.itemWidth = 0;
+    }
     for (var i = 0; i < options.splitList.length; i++) {
         var split = options.splitList[i];
         levels.push({
             x: this.start.x + radius,
             y: this.end.y - options.itemHeight * i - options.itemGap * i + radius,
-            fontX: this.start.x + options.itemWidth - radius + options.wordSpaceing,
-            fontY: this.end.y - options.itemHeight * i - options.itemGap * i + radius,
+            fontX: this.start.x + radius * 2 + options.itemWidth + options.wordSpaceing,
+            fontY: this.end.y - options.itemHeight * i - options.itemGap * i,
             start: split.start,
             end: split.end,
             text: split.level,
             color: split.color,
+            hideColor: '#ccc',
+            show: true
         });
     }
 }
 
-Legend.prototype.drawSymbol = function (context, type) {
+Legend.prototype.drawSymbol = function (context) {
     var options = this.options;
     this.levels.forEach(function (level, i) {
-        var fontX, fontY;
         context.beginPath();
-        context.fillStyle = level.color;
-        switch (type) {
+        context.fillStyle = level.show ? level.color : level.hideColor;
+        switch (options.itemSymbol) {
             case 'circle':
                 context.arc(level.x, level.y, options.itemHeight / 2, 0, Math.PI * 2);
-                fontX = level.x + options.itemHeight / 2 + options.wordSpaceing;
-                fontY = level.y;
                 break;
             case 'rect':
                 context.rect(level.x, level.y, options.itemWidth, options.itemHeight);
-                fontX = level.x + options.itemWidth + options.wordSpaceing;
-                fontY = level.y + options.itemHeight / 2;
                 break;
             case 'roundRect':
                 var radius = 3; //圆角半径
@@ -102,8 +105,6 @@ Legend.prototype.drawSymbol = function (context, type) {
                 context.arcTo(level.x + options.itemWidth, level.y + options.itemHeight, level.x, level.y + options.itemHeight, radius);
                 context.arcTo(level.x, level.y + options.itemHeight, level.x, level.y, radius);
                 context.arcTo(level.x, level.y, level.x + radius, level.y, radius);
-                fontX = level.x + options.itemWidth + options.wordSpaceing;
-                fontY = level.y + options.itemHeight / 2;
                 break;
             default:
                 break;
@@ -115,10 +116,11 @@ Legend.prototype.drawSymbol = function (context, type) {
         context.textAlign = 'left';
         context.textBaseline = "middle";
         context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
-        context.fillStyle = options.textStyle.color;
-        context.fillText(level.text, fontX, fontY);
         level.fontWidth = context.measureText(level.text).width;
         level.fontHeight = options.textStyle.fontSize < 12 ? 12 : options.textStyle.fontSize;
+        context.fillStyle = level.show ? options.textStyle.color : level.hideColor;
+        context.fillText(level.text, level.fontX, level.fontY + level.fontHeight / 2);
+
         context.restore();
     });
 }
@@ -178,9 +180,18 @@ Legend.prototype.move = function (point, canvas) {
     }
 }
 
-Legend.prototype.click = function (point, canvas) {
+Legend.prototype.click = function (point, context) {
     var level = this.getLevel(point);
     if (level) {
+        clear(context);
+        if (level.show) {
+            //当前true则
+            level.show = false;
+            this.drawSymbol(context);
+        } else {
+            level.show = true;
+            this.drawSymbol(context);
+        }
         console.log(level);
     }
 }

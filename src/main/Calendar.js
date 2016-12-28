@@ -48,7 +48,7 @@ Calendar.prototype.init = function () {
     axis.draw(backCanvas.context, options.data.year);
 
     //渲染中间层，文字、颜色
-    axis.renderRect(middleCanvas.context, this.options.data.days, legend.options);
+    axis.render(middleCanvas.context, this.options.data.days, legend.options);
 
     //提示信息框
     var toolTip = new ToolTip(self.container, options.toolTip);
@@ -60,16 +60,9 @@ Calendar.prototype.init = function () {
         var ctxFront = frontCanvas.context;
 
         function addEventListener() {
-            if (toolTip.triggerOn === 'click') {
-                frontCanvas.canvasDOM.addEventListener('click', move, false);
-                toolTip.dom.addEventListener('click', move, false);
-            } else {
-                frontCanvas.canvasDOM.addEventListener('mousemove', move, false);
-                toolTip.dom.addEventListener('mousemove', move, false);
-            }
-
-            frontCanvas.canvasDOM.addEventListener('mousemove', legendMove, false);
+            frontCanvas.canvasDOM.addEventListener('mousemove', move, false);
             frontCanvas.canvasDOM.addEventListener('click', legendClick, false);
+            toolTip.dom.addEventListener('mousemove', move, false);
         }
 
         //鼠标进入，添加遮罩层
@@ -98,6 +91,7 @@ Calendar.prototype.init = function () {
                 x: e.clientX - bbox.left,
                 y: e.clientY - bbox.top
             };
+            legendMove(point);
             var grid = axis.getGrid(point);
             if (grid) {
                 if (index == grid.i) {
@@ -119,12 +113,7 @@ Calendar.prototype.init = function () {
             }
         }
 
-        function legendMove(e) {
-            e.stopPropagation();
-            var point = {
-                x: e.clientX - bbox.left,
-                y: e.clientY - bbox.top
-            };
+        function legendMove(point) {
             if (legend.options.type === 'piecewise') {
                 legend.move(point, frontCanvas.canvasDOM);
             }
@@ -137,7 +126,7 @@ Calendar.prototype.init = function () {
                 y: e.clientY - bbox.top
             };
             if (legend.options.type === 'piecewise') {
-                legend.click(point, frontCanvas.canvasDOM);
+                legend.click(point, ctxFront);
             }
         }
 
