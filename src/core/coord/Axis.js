@@ -1,6 +1,7 @@
 import Choropleth from '../data-range/Choropleth';
 import Palette from '../data-range/Palette';
 import Grid from '../coord/Grid';
+import clear from '../../canvas/clear';
 
 function Axis(opts, view) {
     this.opts = opts;
@@ -158,9 +159,8 @@ Axis.prototype.getGrid = function (point) {
     return false;
 }
 
-Axis.prototype.convertGridData = function (originData, legendOptions) {
+Axis.prototype.convertGridData = function (originData, legendOpts) {
     var self = this;
-    var legendOpts = legendOptions;
     originData = originData.length > self.opts.cols * self.opts.rows ? originData.slice(0, self.opts.cols * self.opts.rows) : originData;
     var axisData = self.axisData;
     var gridData = self.gridData = [];
@@ -214,26 +214,43 @@ Axis.prototype.convertGridData = function (originData, legendOptions) {
 }
 
 //渲染中间层canvas网格
-Axis.prototype.renderRect = function (ctxMiddle, originData, legendType) {
+Axis.prototype.render = function (context, originData, legendOpts) {
+    this.gridData = this.convertGridData(originData, legendOpts);
+    this.drawRect(context, this.gridData);
+}
+
+//middleCanvas渲染
+Axis.prototype.drawRect = function (context, data) {
     var self = this;
-    var gridData = self.convertGridData(originData, legendType);
-    var opts = self.opts,
-        halfWidth = self.gridWidth / 2,
-        halfHeight = self.gridHeight / 2;
-    ctxMiddle.save();
-    ctxMiddle.textAlign = 'center';
-    ctxMiddle.textBaseline = "middle";
-    for (var i = 0, len = gridData.length; i < len; i++) {
-        var grid = gridData[i];
-        ctxMiddle.fillStyle = grid.color == null ? opts.line.fill : grid.color;
-        ctxMiddle.fillRect(grid.x, grid.y, self.gridWidth, self.gridHeight);
-        ctxMiddle.save();
-        ctxMiddle.font = opts.labels.fontSize + 'px ' + ctxMiddle.fontFamily;
-        ctxMiddle.fillStyle = opts.labels.fill;
-        ctxMiddle.fillText(grid.value, grid.x + parseInt(halfWidth), grid.y + parseInt(halfHeight));
-        ctxMiddle.restore();
-    }
-    ctxMiddle.restore();
+    var options = self.opts;
+    var width = self.gridWidth / 2;
+    var height = self.gridWidth / 2;
+    clear(context);
+    context.save();
+    context.font = options.labels.fontSize + 'px ' + context.fontFamily;
+    data.forEach(function (grid, i) {
+        context.fillStyle = grid.color == null ? options.itemStyle.fill : grid.color;
+        context.fillRect(grid.x, grid.y, grid.w, grid.h);
+
+        context.save();
+        context.fillStyle = options.labels.fill;
+        context.fillText(grid.value, grid.x + width, grid.y + height);
+        context.restore();
+    });
+    context.restore();
+}
+
+Axis.prototype.removeData = function (selectedList) {
+    var data = [];
+    this.gridData.forEach(function (grid, i) {
+        selectedList.forEach(function (level, j) {
+            if ((level.start === undefined || level.start !== undefined && grid.value > level.start) &&
+                (level.end === undefined || level.end !== undefined && grid.value <= level.end)) {
+                data.push(grid);
+            }
+        });
+    });
+    return data;
 }
 
 export default Axis;

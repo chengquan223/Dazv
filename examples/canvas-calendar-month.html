@@ -28,7 +28,7 @@
 
 <body>
     <div id="container">
-        <div id="calendar01"></div>
+        <div id="calendar-month"></div>
     </div>
     <script type="text/javascript" src="../build/calendar.js"></script>
     <script>
@@ -41,13 +41,13 @@
             for (var j = 1; j <= date.getDate(); j++) {
                 var day = {
                     date: '2016-' + i + '-' + j,
-                    value: j == Math.floor(Math.random() * 31) ? -5 : Math.ceil(Math.random() * 301)
+                    value: j == Math.floor(Math.random() * 31) ? -5 : Math.ceil(Math.random() * 170)
                 };
                 data.days.push(day);
             }
         }
         var dazv = new Dazv.Calendar({
-            id: 'calendar01',
+            id: 'calendar-month',
             width: 1000,
             height: 560,
             viewCfg: {
@@ -55,7 +55,7 @@
             },
             legendCfg: {
                 type: 'piecewise', //continuous,piecewise 连续,分段
-                itemSymbol: 'roundRect', //circle,rect,roundRect
+                itemSymbol: 'circle', //circle,rect,roundRect
                 calculable: true, //是否启用值域漫游，当piecewise时有效，值域显示为线性渐变
                 left: 7, //左侧图表距离
                 bottom: 15

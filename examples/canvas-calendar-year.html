@@ -3,8 +3,8 @@
 
 <head>
 	<meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1" user-scalable="no">
+	<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1" user-scalable="no">
 	<title>日历-色块图-年度</title>
 	<style type="text/css">
 		html,
@@ -28,9 +28,9 @@
 
 <body>
 	<div id="container">
-		<div id="calendar"></div>
+		<div id="calendar-year"></div>
 	</div>
-	<script type="text/javascript" src="../build/dazv.min.js"></script>
+	<script type="text/javascript" src="../build/dazv.js"></script>
 	<script>
 		var data = [];
 		for (var i = 1; i <= 12; i++) {
@@ -44,11 +44,16 @@
 			}
 		}
 		var dazv = new Dazv.Chart({
-			id: 'calendar',
+			id: 'calendar-year',
 			width: 1000,
 			height: 500,
 			viewCfg: {
 				margin: [20, 90, 60, 50]
+			},
+			legendCfg: {
+				type: 'piecewise', //continuous,piecewise 连续,分段
+				itemSymbol: 'roundRect', //circle,rect,roundRect
+				calculable: true, //是否启用值域漫游，当piecewise时有效，值域显示为线性渐变
 			},
 			data: data
 		});

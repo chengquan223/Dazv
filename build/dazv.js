@@ -109,10 +109,31 @@ function createDiv() {
     return document.createElement('div');
 }
 
+//是否在矩形内
+function isPointInRect(point, bound) {
+    var wn = bound.wn; //西北
+    var es = bound.es; //东南
+    return point.x >= wn.x && point.x <= es.x && point.y >= wn.y && point.y <= es.y;
+}
+
+//是否在圆内
+function isPointInCircle(point, center, radius) {
+    var dis = getDistance(point, center);
+    return dis <= radius;
+}
+
+//两点间距离
+function getDistance(point1, point2) {
+    return Math.sqrt(Math.pow(point1.x - point2.x, 2) + Math.pow(point1.y - point2.y, 2));
+}
+
 var util = {
     merge: merge,
     guid: guid,
-    createDiv: createDiv
+    createDiv: createDiv,
+    isPointInRect: isPointInRect,
+    isPointInCircle: isPointInCircle,
+    getDistance: getDistance
 };
 
 var defaults = {
@@ -177,25 +198,24 @@ var defaults = {
             height: 21,
             fontSize: 12,
             fontWeight: 'bold',
-            fill: '#F4F4F4',
-            color: '#3c3c3c'
+            fill: '#f7f7f7',
+            color: '#666'
         },
         weekStyle: {
             height: 21,
             fontSize: 12,
             fill: '#fff',
-            color: '#666'
+            color: '#999'
         },
         dayStyle: {
             fontSize: 12,
-            lineWidth: 0.1,
             stroke: '#ccc',
             color: '#3c3c3c'
         },
         itemStyle: {
             stroke: '#eee',
-            fill: '#f1f1f1',
-            lineWidth: 1
+            fill: '#ddd',
+            lineWidth: .5
         }
     },
     legendCfg: {
@@ -265,7 +285,6 @@ var defaults = {
     toolTip: {
         isShow: true,
         position: [5, 5],
-        triggerOn: 'mousemove', //触发条件mousemove，click
         style: 'position:absolute;visibility:hidden;background-Color:rgba(0,0,0,0.7);transition:top 0.2s,left 0.2s;border-radius: 2px;color:#fff;line-height: 16px;padding:5px 10px;'
     }
 };
@@ -310,6 +329,8 @@ CanvasLayer.prototype.init = function () {
     this.containerDOM.appendChild(canvasDOM);
     this.canvasDOM = canvasDOM;
     context.fontFamily = this.fontFamily;
+    context.textAlign = 'center';
+    context.textBaseline = "middle";
     this.context = context;
 };
 
@@ -413,6 +434,10 @@ Choropleth.prototype.get = function (count) {
     return split;
 };
 
+var clear = function (context) {
+    context && context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+};
+
 function Legend(options, view) {
     this.options = options;
     this.init(view);
@@ -434,16 +459,16 @@ Legend.prototype.draw = function (context) {
     if (this.options.show) {
         switch (this.options.type) {
             case 'piecewise':
-                this.drawByPieceWise(context);
+                this.renderByPieceWise(context);
                 break;
             default:
-                this.drawByContinuous(context);
+                this.renderByContinuous(context);
                 break;
         }
     }
 };
 
-Legend.prototype.drawByContinuous = function (context) {
+Legend.prototype.renderByContinuous = function (context) {
     var options = this.options;
     //调色板
     var palette = new Palette({
@@ -464,91 +489,153 @@ Legend.prototype.drawByContinuous = function (context) {
     context.restore();
 };
 
-Legend.prototype.drawByPieceWise = function (context) {
-    var choropleth = new Choropleth(this.options); //分段颜色连续
-    switch (this.options.itemSymbol) {
-        case 'circle':
-            this.drawCircle(context);
-            break;
-        case 'rect':
-            this.drawRect(context);
-            break;
-        case 'roundRect':
-            this.drawRoundRect(context);
-            break;
-        default:
-            break;
+Legend.prototype.renderByPieceWise = function (context) {
+    var self = this;
+    self.initLevel();
+    self.drawSymbol(context);
+};
+
+Legend.prototype.initLevel = function () {
+    var choropleth = new Choropleth(this.options); //分段颜色连续，必需，定义变量未使用，写法有待优化
+    var options = this.options;
+    var levels = this.levels = [];
+    var radius = 0;
+    if (options.itemSymbol === 'circle') {
+        radius = options.itemHeight / 2;
+        options.itemWidth = 0;
+    }
+    for (var i = 0; i < options.splitList.length; i++) {
+        var split = options.splitList[i];
+        levels.push({
+            x: this.start.x + radius,
+            y: this.end.y - options.itemHeight * i - options.itemGap * i + radius,
+            fontX: this.start.x + radius * 2 + options.itemWidth + options.wordSpaceing,
+            fontY: this.end.y - options.itemHeight * i - options.itemGap * i,
+            start: split.start,
+            end: split.end,
+            text: split.level,
+            color: split.color,
+            hideColor: '#ccc',
+            show: true
+        });
     }
 };
 
-Legend.prototype.drawCircle = function (context) {
+Legend.prototype.drawSymbol = function (context) {
     var options = this.options;
-    var radius = options.itemHeight / 2;
-    for (var i = 0; i < options.splitList.length; i++) {
-        var item = options.splitList[i];
-        var itemX = this.start.x + radius;
-        var itemY = this.end.y - options.itemHeight * i - options.itemGap * i - radius;
-        context.fillStyle = item.color;
+    this.levels.forEach(function (level, i) {
         context.beginPath();
-        context.arc(itemX, itemY, radius, 0, Math.PI * 2, true);
-        context.closePath();
+        context.fillStyle = level.show ? level.color : level.hideColor;
+        switch (options.itemSymbol) {
+            case 'circle':
+                context.arc(level.x, level.y, options.itemHeight / 2, 0, Math.PI * 2);
+                break;
+            case 'rect':
+                context.rect(level.x, level.y, options.itemWidth, options.itemHeight);
+                break;
+            case 'roundRect':
+                var radius = 3; //圆角半径
+                context.moveTo(level.x + radius, level.y);
+                context.arcTo(level.x + options.itemWidth, level.y, level.x + options.itemWidth, level.y + options.itemHeight, radius);
+                context.arcTo(level.x + options.itemWidth, level.y + options.itemHeight, level.x, level.y + options.itemHeight, radius);
+                context.arcTo(level.x, level.y + options.itemHeight, level.x, level.y, radius);
+                context.arcTo(level.x, level.y, level.x + radius, level.y, radius);
+                break;
+            default:
+                break;
+        }
         context.fill();
+        context.closePath();
 
         context.save();
         context.textAlign = 'left';
         context.textBaseline = "middle";
         context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
-        context.fillStyle = options.textStyle.color;
-        context.fillText(item.level, itemX + radius + options.wordSpaceing, itemY);
+        level.fontWidth = context.measureText(level.text).width;
+        level.fontHeight = options.textStyle.fontSize < 12 ? 12 : options.textStyle.fontSize;
+        context.fillStyle = level.show ? options.textStyle.color : level.hideColor;
+        context.fillText(level.text, level.fontX, level.fontY + level.fontHeight / 2);
+
         context.restore();
+    });
+};
+
+Legend.prototype.getLevel = function (point) {
+    var options = this.options;
+    var levels = this.levels;
+    var flag1, flag2;
+    for (var i = 0, l = levels.length; i < l; i++) {
+        var level = levels[i];
+        //圆、矩形、圆角矩形
+        switch (options.itemSymbol) {
+            case 'circle':
+                var point2 = {
+                    x: level.x,
+                    y: level.y
+                };
+                flag1 = util.isPointInCircle(point, point2, options.itemHeight / 2);
+                break;
+            default:
+                var bound = {
+                    wn: {
+                        x: level.x,
+                        y: level.y
+                    },
+                    es: {
+                        x: level.x + options.itemWidth,
+                        y: level.y + options.itemHeight
+                    }
+                };
+                flag1 = util.isPointInRect(point, bound);
+                break;
+        }
+
+        flag2 = util.isPointInRect(point, {
+            wn: {
+                x: level.fontX,
+                y: level.fontY
+            },
+            es: {
+                x: level.fontX + level.fontWidth,
+                y: level.fontY + level.fontHeight
+            }
+        });
+
+        if (flag1 || flag2) {
+            return level;
+        }
     }
 };
 
-Legend.prototype.drawRect = function (context) {
-    var options = this.options;
-    var radius = options.itemHeight / 2;
-    for (var i = 0; i < options.splitList.length; i++) {
-        var item = options.splitList[i];
-        var itemX = this.start.x;
-        var itemY = this.end.y - options.itemHeight * (i + 1) - options.itemGap * i;
-        context.fillStyle = item.color;
-        context.fillRect(itemX, itemY, options.itemWidth, options.itemHeight);
+Legend.prototype.updateSelectedList = function (level) {
+    this.selectedList = this.selectedList || this.levels.slice();
+    if (level.show) {
+        this.selectedList.push(level);
+    } else {
+        this.selectedList.remove(level);
+    }
+    return this.selectedList;
+};
 
-        context.save();
-        context.textAlign = 'left';
-        context.textBaseline = "middle";
-        context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
-        context.fillStyle = options.textStyle.color;
-        context.fillText(item.level, itemX + options.itemWidth + options.wordSpaceing, itemY + radius);
-        context.restore();
+Array.prototype.indexOf = function (val) {
+    for (var i = 0; i < this.length; i++) {
+        if (this[i] == val) return i;
+    }
+    return -1;
+};
+
+Array.prototype.remove = function (val) {
+    var index = this.indexOf(val);
+    if (index > -1) {
+        this.splice(index, 1);
     }
 };
 
-Legend.prototype.drawRoundRect = function (context) {
-    var options = this.options;
-    var radius = options.itemHeight / 2;
-    var r = 3;
-    for (var i = 0; i < options.splitList.length; i++) {
-        var item = options.splitList[i];
-        var itemX = this.start.x;
-        var itemY = this.end.y - options.itemHeight * (i + 1) - options.itemGap * i;
-        context.fillStyle = item.color;
-        context.beginPath();
-        context.moveTo(itemX + r, itemY);
-        context.arcTo(itemX + options.itemWidth, itemY, itemX + options.itemWidth, itemY + options.itemHeight, r);
-        context.arcTo(itemX + options.itemWidth, itemY + options.itemHeight, itemX, itemY + options.itemHeight, r);
-        context.arcTo(itemX, itemY + options.itemHeight, itemX, itemY, r);
-        context.arcTo(itemX, itemY, itemX + r, itemY, r);
-        context.closePath();
-        context.fill();
-
-        context.save();
-        context.textAlign = 'left';
-        context.textBaseline = "middle";
-        context.font = options.textStyle.fontSize + 'px ' + context.fontFamily;
-        context.fillStyle = options.textStyle.color;
-        context.fillText(item.level, itemX + options.itemWidth + options.wordSpaceing, itemY + radius);
-        context.restore();
+Legend.prototype.move = function (point, canvas) {
+    if (this.getLevel(point)) {
+        canvas.style.cursor = 'pointer';
+    } else {
+        canvas.style.cursor = 'default';
     }
 };
 
@@ -708,20 +795,19 @@ Axis.prototype.drawRectIntersect = function (ctxBack) {
 };
 
 //获取单元格
-Axis.prototype.getGrid = function (x, y) {
+Axis.prototype.getGrid = function (point) {
     var dataList = this.gridData;
     for (var i = 0, len = dataList.length; i < len; i++) {
         var grid = dataList[i];
-        if (x >= grid.x && x < grid.x + this.gridWidth && y >= grid.y && y < grid.y + this.gridHeight) {
+        if (point.x >= grid.x && point.x < grid.x + grid.w && point.y >= grid.y && point.y < grid.y + grid.h) {
             return grid;
         }
     }
     return false;
 };
 
-Axis.prototype.convertGridData = function (originData, legendOptions) {
+Axis.prototype.convertGridData = function (originData, legendOpts) {
     var self = this;
-    var legendOpts = legendOptions;
     originData = originData.length > self.opts.cols * self.opts.rows ? originData.slice(0, self.opts.cols * self.opts.rows) : originData;
     var axisData = self.axisData;
     var gridData = self.gridData = [];
@@ -775,26 +861,42 @@ Axis.prototype.convertGridData = function (originData, legendOptions) {
 };
 
 //渲染中间层canvas网格
-Axis.prototype.renderRect = function (ctxMiddle, originData, legendType) {
+Axis.prototype.render = function (context, originData, legendOpts) {
+    this.gridData = this.convertGridData(originData, legendOpts);
+    this.drawRect(context, this.gridData);
+};
+
+//middleCanvas渲染
+Axis.prototype.drawRect = function (context, data) {
     var self = this;
-    var gridData = self.convertGridData(originData, legendType);
-    var opts = self.opts,
-        halfWidth = self.gridWidth / 2,
-        halfHeight = self.gridHeight / 2;
-    ctxMiddle.save();
-    ctxMiddle.textAlign = 'center';
-    ctxMiddle.textBaseline = "middle";
-    for (var i = 0, len = gridData.length; i < len; i++) {
-        var grid = gridData[i];
-        ctxMiddle.fillStyle = grid.color == null ? opts.line.fill : grid.color;
-        ctxMiddle.fillRect(grid.x, grid.y, self.gridWidth, self.gridHeight);
-        ctxMiddle.save();
-        ctxMiddle.font = opts.labels.fontSize + 'px ' + ctxMiddle.fontFamily;
-        ctxMiddle.fillStyle = opts.labels.fill;
-        ctxMiddle.fillText(grid.value, grid.x + parseInt(halfWidth), grid.y + parseInt(halfHeight));
-        ctxMiddle.restore();
-    }
-    ctxMiddle.restore();
+    var options = self.opts;
+    var width = self.gridWidth / 2;
+    var height = self.gridWidth / 2;
+    clear(context);
+    context.save();
+    context.font = options.labels.fontSize + 'px ' + context.fontFamily;
+    data.forEach(function (grid, i) {
+        context.fillStyle = grid.color == null ? options.itemStyle.fill : grid.color;
+        context.fillRect(grid.x, grid.y, grid.w, grid.h);
+
+        context.save();
+        context.fillStyle = options.labels.fill;
+        context.fillText(grid.value, grid.x + width, grid.y + height);
+        context.restore();
+    });
+    context.restore();
+};
+
+Axis.prototype.removeData = function (selectedList) {
+    var data = [];
+    this.gridData.forEach(function (grid, i) {
+        selectedList.forEach(function (level, j) {
+            if ((level.start === undefined || level.start !== undefined && grid.value > level.start) && (level.end === undefined || level.end !== undefined && grid.value <= level.end)) {
+                data.push(grid);
+            }
+        });
+    });
+    return data;
 };
 
 /**
@@ -805,7 +907,6 @@ function ToolTip(container, options) {
     this.container = container;
     this.style = options.style;
     this.isShow = options.isShow;
-    this.triggerOn = options.triggerOn;
     this.create();
 }
 
@@ -864,7 +965,7 @@ Chart.prototype.init = function () {
     axis.draw(backCanvas.context);
 
     //渲染中间层，文字、颜色
-    axis.renderRect(middleCanvas.context, this.options.data, legend.options);
+    axis.render(middleCanvas.context, this.options.data, legend.options);
 
     //提示信息框
     var toolTip = new ToolTip(self.container, options.toolTip);
@@ -876,13 +977,9 @@ Chart.prototype.init = function () {
         var ctxFront = frontCanvas.context;
 
         function addEventListener() {
-            if (toolTip.triggerOn === 'click') {
-                frontCanvas.canvasDOM.addEventListener('click', move, false);
-                toolTip.dom.addEventListener('click', move, false);
-            } else {
-                frontCanvas.canvasDOM.addEventListener('mousemove', move, false);
-                toolTip.dom.addEventListener('mousemove', move, false);
-            }
+            frontCanvas.canvasDOM.addEventListener('mousemove', move, false);
+            frontCanvas.canvasDOM.addEventListener('click', legendClick, false);
+            toolTip.dom.addEventListener('mousemove', move, false);
         }
 
         //鼠标进入，添加遮罩层
@@ -906,9 +1003,13 @@ Chart.prototype.init = function () {
         }
 
         function move(e) {
-            var x = e.clientX - bbox.left;
-            var y = e.clientY - bbox.top;
-            var grid = axis.getGrid(x, y);
+            e.stopPropagation();
+            var point = {
+                x: e.clientX - bbox.left,
+                y: e.clientY - bbox.top
+            };
+            legendMove(point);
+            var grid = axis.getGrid(point);
             if (grid) {
                 if (index == grid.i) {
                     return;
@@ -926,6 +1027,31 @@ Chart.prototype.init = function () {
                 ctxFront.clearRect(axis.start.x, axis.start.y, axis.width, axis.height);
                 toolTip.hide();
                 index = -1;
+            }
+        }
+
+        function legendMove(point) {
+            if (legend.options.type === 'piecewise') {
+                legend.move(point, frontCanvas.canvasDOM);
+            }
+        }
+
+        function legendClick(e) {
+            e.stopPropagation();
+            var point = {
+                x: e.clientX - bbox.left,
+                y: e.clientY - bbox.top
+            };
+            if (legend.options.type === 'piecewise') {
+                var level = legend.getLevel(point);
+                if (level) {
+                    clear(ctxFront);
+                    level.show = level.show ? false : true;
+                    legend.drawSymbol(ctxFront);
+                    var selectedList = legend.updateSelectedList(level); //更新要剔除的等级
+                    var data = axis.removeData(selectedList);
+                    axis.drawRect(middleCanvas.context, data);
+                }
             }
         }
 

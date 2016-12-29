@@ -6,6 +6,7 @@ import View from '../core/coord/View';
 import Legend from '../core/legend/Legend';
 import Axis from '../core/coord/Axis';
 import ToolTip from '../core/tooltip/ToolTip';
+import clear from '../canvas/clear';
 
 function Chart(options) {
     options = options || {};
@@ -35,7 +36,7 @@ Chart.prototype.init = function () {
     axis.draw(backCanvas.context);
 
     //渲染中间层，文字、颜色
-    axis.renderRect(middleCanvas.context, this.options.data, legend.options);
+    axis.render(middleCanvas.context, this.options.data, legend.options);
 
     //提示信息框
     var toolTip = new ToolTip(self.container, options.toolTip);
@@ -47,13 +48,9 @@ Chart.prototype.init = function () {
         var ctxFront = frontCanvas.context;
 
         function addEventListener() {
-            if (toolTip.triggerOn === 'click') {
-                frontCanvas.canvasDOM.addEventListener('click', move, false);
-                toolTip.dom.addEventListener('click', move, false);
-            } else {
-                frontCanvas.canvasDOM.addEventListener('mousemove', move, false);
-                toolTip.dom.addEventListener('mousemove', move, false);
-            }
+            frontCanvas.canvasDOM.addEventListener('mousemove', move, false);
+            frontCanvas.canvasDOM.addEventListener('click', legendClick, false);
+            toolTip.dom.addEventListener('mousemove', move, false);
         }
 
         //鼠标进入，添加遮罩层
@@ -77,9 +74,13 @@ Chart.prototype.init = function () {
         };
 
         function move(e) {
-            var x = e.clientX - bbox.left;
-            var y = e.clientY - bbox.top;
-            var grid = axis.getGrid(x, y);
+            e.stopPropagation();
+            var point = {
+                x: e.clientX - bbox.left,
+                y: e.clientY - bbox.top
+            };
+            legendMove(point);
+            var grid = axis.getGrid(point);
             if (grid) {
                 if (index == grid.i) {
                     return;
@@ -97,6 +98,31 @@ Chart.prototype.init = function () {
                 ctxFront.clearRect(axis.start.x, axis.start.y, axis.width, axis.height);
                 toolTip.hide();
                 index = -1;
+            }
+        }
+
+        function legendMove(point) {
+            if (legend.options.type === 'piecewise') {
+                legend.move(point, frontCanvas.canvasDOM);
+            }
+        }
+
+        function legendClick(e) {
+            e.stopPropagation();
+            var point = {
+                x: e.clientX - bbox.left,
+                y: e.clientY - bbox.top
+            };
+            if (legend.options.type === 'piecewise') {
+                var level = legend.getLevel(point);
+                if (level) {
+                    clear(ctxFront);
+                    level.show = level.show ? false : true;
+                    legend.drawSymbol(ctxFront);
+                    var selectedList = legend.updateSelectedList(level); //更新要剔除的等级
+                    var data = axis.removeData(selectedList);
+                    axis.drawRect(middleCanvas.context, data);
+                }
             }
         }
 
