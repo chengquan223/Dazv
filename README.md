@@ -10,5 +10,8 @@
 
 ## 示例
 <a href="https://github.com/chengquan223">
-    <img style="vertical-align: top;" src="./asset/canvas-calendar.png?raw=true" alt="logo">
+    <img style="vertical-align: top;" src="./asset/canvas-calendar-year.png?raw=true" alt="logo">
+</a>
+<a href="https://github.com/chengquan223">
+    <img style="vertical-align: top;" src="./asset/canvas-calendar-month.png?raw=true" alt="logo">
 </a>
