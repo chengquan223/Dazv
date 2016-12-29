@@ -28,7 +28,7 @@ Chart.prototype.init = function () {
     });
 
     //图例
-    var legend = self.legend = new Legend(options.legendCfg, view);
+    var legend = self.legend = new Legend(options.legendCfg, view); 
     legend.draw(frontCanvas.context);
 
     //坐标系

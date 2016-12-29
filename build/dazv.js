@@ -144,6 +144,96 @@ var defaults = {
     viewCfg: {
         margin: [20, 60, 60, 60]
     },
+    xAxis: {
+        type: 'value', //坐标轴类型，category必须要设置data类数据
+        name: '日期（day）', //坐标轴名称
+        nameLocation: 'middle', //坐标轴名称显示位置
+        nameGap: 42, //坐标轴名称与轴线距离
+        min: 1,
+        max: 31,
+        splitNumber: 5,
+        interval: 1, //坐标轴分隔间隔，无法在类目轴中使用
+        textStyle: {
+            color: '#3c3c3c',
+            fontStyle: 'normal',
+            fontFamily: 'sans-serif',
+            fontSize: 12
+        },
+        line: {
+            show: true, //是否显示坐标轴线
+            onZero: true, //周线是否在另一个轴的0刻度上
+            style: {
+                color: '#ccc', //坐标轴线颜色
+                lineWidth: 1, //线的宽度
+                type: 'solid' //线的类型
+            }
+        },
+        tick: {
+            show: true, //是否显示刻度
+            interval: 0, //刻度的显示间隔，0显示全部刻度，1表示隔一个标签显示一个,以此类推
+            length: 5, //刻度长度
+            style: {
+                color: '#ccc', //刻度颜色
+                lineWidth: 1 //刻度宽度
+            }
+        },
+        label: {
+            show: true,
+            interval: 0,
+            rotate: 0, //刻度标签旋转角度，-90°到90°
+            offset: 10, //刻度标签与轴线之间的距离
+            formatter: null, //如：'{value} kg'
+            style: {
+                color: '#3c3c3c',
+                fontStyle: 'normal',
+                fontFamily: 'sans-serif',
+                fontSize: 12
+            }
+        }
+    },
+    yAxis: {
+        type: 'category', //坐标轴类型，category必须要设置data类数据,value必须设置min、max
+        name: '月份（month）', //坐标轴名称
+        nameLocation: 'middle', //坐标轴名称显示位置
+        nameGap: 42, //坐标轴名称与轴线距离
+        textStyle: {
+            color: '#3c3c3c',
+            fontStyle: 'normal',
+            fontFamily: 'sans-serif',
+            fontSize: 12
+        },
+        line: {
+            show: true, //是否显示坐标轴线
+            onZero: true, //周线是否在另一个轴的0刻度上
+            style: {
+                color: '#ccc', //坐标轴线颜色
+                lineWidth: 1, //线的宽度
+                type: 'solid' //线的类型
+            }
+        },
+        tick: {
+            show: true, //是否显示刻度
+            interval: 0, //刻度的显示间隔，0显示全部刻度，1表示隔一个标签显示一个,以此类推
+            length: 5, //刻度长度
+            style: {
+                color: '#ccc', //刻度颜色
+                lineWidth: 1 //刻度宽度
+            }
+        },
+        label: {
+            show: true,
+            interval: 0,
+            rotate: 0, //刻度标签旋转角度，-90°到90°
+            offset: 10, //刻度标签与轴线之间的距离
+            formatter: '{value}月', //如：'{value} kg'
+            style: {
+                color: '#3c3c3c',
+                fontStyle: 'normal',
+                fontFamily: 'sans-serif',
+                fontSize: 12
+            }
+        }
+    },
     axisCfg: {
         line: {
             lineWidth: 1, //线的宽度
@@ -169,22 +259,6 @@ var defaults = {
             }
         },
         gridAlign: 'start', //栅格的位置跟坐标点(tick)的对齐方式，当前仅支持 start和middle
-        x: {
-            type: 'date',
-            name: '日期（day）',
-            min: 0,
-            max: 31,
-            showLine: false,
-            tickInterval: 1
-        },
-        y: {
-            type: 'month',
-            name: '月份（month）',
-            min: 0,
-            max: 12,
-            showLine: false,
-            tickInterval: 1
-        },
         rows: 12, //行
         cols: 31, //列
         space: 0, //间距
