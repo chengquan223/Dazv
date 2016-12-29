@@ -130,21 +130,11 @@ Calendar.prototype.init = function () {
                 var level = legend.getLevel(point);
                 if (level) {
                     clear(ctxFront);
-                    if (level.show) {
-                        level.show = false;
-                        legend.drawSymbol(ctxFront);
-                        clear(middleCanvas.context);
-                        var removeList = axis.updateRemoveList(level);
-                        var data = axis.removeData();
-                        axis.drawRect(middleCanvas.context, data);
-                    } else {
-                        level.show = true;
-                        legend.drawSymbol(ctxFront);
-                        var removeList = axis.updateRemoveList(level);
-                        var data = axis.removeData();
-                        axis.drawRect(middleCanvas.context, data);
-                    }
-                    console.log(level);
+                    level.show = level.show ? false : true;
+                    legend.drawSymbol(ctxFront);
+                    var selectedList = legend.updateSelectedList(level); //更新要剔除的等级
+                    var data = axis.removeData(selectedList);
+                    axis.drawRect(middleCanvas.context, data);
                 }
             }
         }

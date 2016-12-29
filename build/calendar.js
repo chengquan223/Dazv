@@ -607,27 +607,35 @@ Legend.prototype.getLevel = function (point) {
     }
 };
 
+Legend.prototype.updateSelectedList = function (level) {
+    this.selectedList = this.selectedList || this.levels.slice();
+    if (level.show) {
+        this.selectedList.push(level);
+    } else {
+        this.selectedList.remove(level);
+    }
+    return this.selectedList;
+};
+
+Array.prototype.indexOf = function (val) {
+    for (var i = 0; i < this.length; i++) {
+        if (this[i] == val) return i;
+    }
+    return -1;
+};
+
+Array.prototype.remove = function (val) {
+    var index = this.indexOf(val);
+    if (index > -1) {
+        this.splice(index, 1);
+    }
+};
+
 Legend.prototype.move = function (point, canvas) {
     if (this.getLevel(point)) {
         canvas.style.cursor = 'pointer';
     } else {
         canvas.style.cursor = 'default';
-    }
-};
-
-Legend.prototype.click = function (point, context) {
-    var level = this.getLevel(point);
-    if (level) {
-        clear(context);
-        if (level.show) {
-            //当前true则
-            level.show = false;
-            this.drawSymbol(context);
-        } else {
-            level.show = true;
-            this.drawSymbol(context);
-        }
-        console.log(level);
     }
 };
 
@@ -838,6 +846,7 @@ AxisCalendar.prototype.drawRect = function (context, data) {
     var options = self.opts;
     var width = self.dayWidth / 2;
     var height = self.dayHeight / 2;
+    clear(context);
     context.save();
     context.font = options.dayStyle.fontSize + 'px ' + context.fontFamily;
     data.forEach(function (grid, i) {
@@ -852,43 +861,16 @@ AxisCalendar.prototype.drawRect = function (context, data) {
     context.restore();
 };
 
-AxisCalendar.prototype.removeData = function () {
-    //原数组，新数组
-    var self = this;
+AxisCalendar.prototype.removeData = function (selectedList) {
     var data = [];
-    if (self.removeList.length == 0) return this.gridData;
-    self.gridData.forEach(function (grid, i) {
-
-        self.removeList.forEach(function (level, j) {
-            if ((level.start === undefined || level.start !== undefined && grid.value > level.start) && (level.end === undefined || level.end !== undefined && grid.value <= level.end) && data.indexOf(grid) == -1) {} else {
+    this.gridData.forEach(function (grid, i) {
+        selectedList.forEach(function (level, j) {
+            if ((level.start === undefined || level.start !== undefined && grid.value > level.start) && (level.end === undefined || level.end !== undefined && grid.value <= level.end)) {
                 data.push(grid);
             }
         });
     });
     return data;
-};
-
-AxisCalendar.prototype.updateRemoveList = function (level) {
-    this.removeList = this.removeList || [];
-    if (level.show) {
-        this.removeList.remove(level);
-    } else {
-        this.removeList.push(level);
-    }
-};
-
-Array.prototype.indexOf = function (val) {
-    for (var i = 0; i < this.length; i++) {
-        if (this[i] == val) return i;
-    }
-    return -1;
-};
-
-Array.prototype.remove = function (val) {
-    var index = this.indexOf(val);
-    if (index > -1) {
-        this.splice(index, 1);
-    }
 };
 
 /**
@@ -1051,21 +1033,11 @@ Calendar.prototype.init = function () {
                 var level = legend.getLevel(point);
                 if (level) {
                     clear(ctxFront);
-                    if (level.show) {
-                        level.show = false;
-                        legend.drawSymbol(ctxFront);
-                        clear(middleCanvas.context);
-                        var removeList = axis.updateRemoveList(level);
-                        var data = axis.removeData();
-                        axis.drawRect(middleCanvas.context, data);
-                    } else {
-                        level.show = true;
-                        legend.drawSymbol(ctxFront);
-                        var removeList = axis.updateRemoveList(level);
-                        var data = axis.removeData();
-                        axis.drawRect(middleCanvas.context, data);
-                    }
-                    console.log(level);
+                    level.show = level.show ? false : true;
+                    legend.drawSymbol(ctxFront);
+                    var selectedList = legend.updateSelectedList(level); //更新要剔除的等级
+                    var data = axis.removeData(selectedList);
+                    axis.drawRect(middleCanvas.context, data);
                 }
             }
         }

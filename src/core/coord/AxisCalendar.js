@@ -1,6 +1,7 @@
 import Choropleth from '../data-range/Choropleth';
 import Palette from '../data-range/Palette';
 import Grid from '../coord/Grid';
+import clear from '../../canvas/clear';
 
 function AxisCalendar(opts, view) {
     this.opts = opts;
@@ -198,6 +199,7 @@ AxisCalendar.prototype.drawRect = function (context, data) {
     var options = self.opts;
     var width = self.dayWidth / 2;
     var height = self.dayHeight / 2;
+    clear(context);
     context.save();
     context.font = options.dayStyle.fontSize + 'px ' + context.fontFamily;
     data.forEach(function (grid, i) {
@@ -212,44 +214,17 @@ AxisCalendar.prototype.drawRect = function (context, data) {
     context.restore();
 }
 
-AxisCalendar.prototype.removeData = function () {
-    //原数组，新数组
-    var self = this;
+AxisCalendar.prototype.removeData = function (selectedList) {
     var data = [];
-    if (self.removeList.length == 0) return this.gridData;
-    self.gridData.forEach(function (grid, i) {
-
-        self.removeList.forEach(function (level, j) {
+    this.gridData.forEach(function (grid, i) {
+        selectedList.forEach(function (level, j) {
             if ((level.start === undefined || level.start !== undefined && grid.value > level.start) &&
-                (level.end === undefined || level.end !== undefined && grid.value <= level.end) && (data.indexOf(grid) == -1)) {} else {
+                (level.end === undefined || level.end !== undefined && grid.value <= level.end)) {
                 data.push(grid);
             }
         });
     });
     return data;
 }
-
-AxisCalendar.prototype.updateRemoveList = function (level) {
-    this.removeList = this.removeList || [];
-    if (level.show) {
-        this.removeList.remove(level);
-    } else {
-        this.removeList.push(level);
-    }
-}
-
-Array.prototype.indexOf = function (val) {
-    for (var i = 0; i < this.length; i++) {
-        if (this[i] == val) return i;
-    }
-    return -1;
-};
-
-Array.prototype.remove = function (val) {
-    var index = this.indexOf(val);
-    if (index > -1) {
-        this.splice(index, 1);
-    }
-};
 
 export default AxisCalendar;

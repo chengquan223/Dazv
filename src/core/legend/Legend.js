@@ -172,27 +172,35 @@ Legend.prototype.getLevel = function (point) {
     }
 }
 
+Legend.prototype.updateSelectedList = function (level) {
+    this.selectedList = this.selectedList || this.levels.slice();
+    if (level.show) {
+        this.selectedList.push(level);
+    } else {
+        this.selectedList.remove(level);
+    }
+    return this.selectedList;
+}
+
+Array.prototype.indexOf = function (val) {
+    for (var i = 0; i < this.length; i++) {
+        if (this[i] == val) return i;
+    }
+    return -1;
+};
+
+Array.prototype.remove = function (val) {
+    var index = this.indexOf(val);
+    if (index > -1) {
+        this.splice(index, 1);
+    }
+};
+
 Legend.prototype.move = function (point, canvas) {
     if (this.getLevel(point)) {
         canvas.style.cursor = 'pointer';
     } else {
         canvas.style.cursor = 'default';
-    }
-}
-
-Legend.prototype.click = function (point, context) {
-    var level = this.getLevel(point);
-    if (level) {
-        clear(context);
-        if (level.show) {
-            //当前true则
-            level.show = false;
-            this.drawSymbol(context);
-        } else {
-            level.show = true;
-            this.drawSymbol(context);
-        }
-        console.log(level);
     }
 }
 
