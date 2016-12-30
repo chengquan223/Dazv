@@ -1,8 +1,21 @@
+var platform = '';
+// Navigator not exists in node
+if (typeof navigator !== 'undefined') {
+    platform = navigator.platform || '';
+}
+
 var defaults = {
     width: 1000,
     height: 500,
     fontSize: 12,
-    fontFamily: '"Helvetica Neue",Helvetica,"Hiragino Sans GB","STHeitiSC-LIght","Microsoft YaHei","微软雅黑",Arial,sans-serif',
+    // fontFamily: '"Helvetica Neue",Helvetica,"Hiragino Sans GB","STHeitiSC-LIght","Microsoft YaHei","微软雅黑",Arial,sans-serif',
+    fontFamily: platform.match(/^Win/) ? 'Microsoft YaHei' : 'sans-serif',
+    textStyle: {
+        fontFamily: platform.match(/^Win/) ? 'Microsoft YaHei' : 'sans-serif',
+        fontSize: 12,
+        fontStyle: 'normal',
+        fontWeight: 'normal'
+    },
     viewCfg: {
         margin: [20, 60, 60, 60]
     },
