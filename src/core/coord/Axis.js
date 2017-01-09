@@ -224,7 +224,7 @@ Axis.prototype.drawRect = function (context, data) {
     var self = this;
     var options = self.opts;
     var width = self.gridWidth / 2;
-    var height = self.gridWidth / 2;
+    var height = self.gridHeight / 2;
     clear(context);
     context.save();
     context.font = options.labels.fontSize + 'px ' + context.fontFamily;

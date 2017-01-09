@@ -968,7 +968,7 @@
         var self = this;
         var options = self.opts;
         var width = self.gridWidth / 2;
-        var height = self.gridWidth / 2;
+        var height = self.gridHeight / 2;
         clear(context);
         context.save();
         context.font = options.labels.fontSize + 'px ' + context.fontFamily;
@@ -978,7 +978,7 @@
 
             context.save();
             context.fillStyle = options.labels.fill;
-            context.fillText('', grid.x + width, grid.y + height);
+            context.fillText(grid.value.toFixed(2), grid.x + width, grid.y + height);
             context.restore();
         });
         context.restore();
@@ -1116,7 +1116,7 @@
                     // addMask(grid);
                     addBorder(grid);
                     if (toolTip.isShow) {
-                        var content = '月份 : ' + grid.date + '<br>风向 : ' + grid.direction + '<br><span style="display:inline-block;margin-right:5px;border-radius:10px;width:9px;height:9px;background-color:' + grid.color + ';"></span>' + grid.value;
+                        var content = '月份 : ' + grid.date + '<br>风向 : ' + grid.direction + '<br><span style="display:inline-block;margin-right:5px;border-radius:10px;width:9px;height:9px;background-color:' + grid.color + ';"></span>' + grid.value.toFixed(2);
                         toolTip.setContent(content);
                         toolTip.setPosition(grid.x, grid.y);
                         toolTip.show();
