@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1" user-scalable="no">
+    <title>日历-色块图-风</title>
+    <style type="text/css">
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Helvetica Neue', 'Helvetica', tahoma, 'Hiragino Sans GB', 'PingFang SC', 'STHeitiSC-Light', 'Microsoft YaHei', Arial, sans-serif;
+            font-size: 12px;
+        }
+        
+        #container {
+            width: 1000px;
+            height: 500px;
+            margin: 50px auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div id="wind"></div>
+    </div>
+    <script type="text/javascript" src="../build/wind.js"></script>
+    <script>
+        var winds = ['NW', 'W', 'SW', 'S', 'SE', 'E', 'NE', 'N'];
+        var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        var data = [];
+        for (var i = 0; i < months.length; i++) {
+            var item = {
+                month: months[i],
+                wind: []
+            };
+            for (var j = 0; j < winds.length; j++) {
+                var wind = [winds[j], Math.random() * 0.4];
+                item.wind.push(wind);
+            }
+            data.push(item);
+        }
+
+        var dazv = new Dazv.Chart({
+            id: 'wind',
+            width: 1000,
+            height: 500,
+            viewCfg: {
+                margin: [20, 90, 60, 50]
+            },
+            legendCfg: {
+                type: 'continuous', //continuous,piecewise 连续,分段
+                itemSymbol: 'circle', //circle,rect,roundRect
+                calculable: true, //是否启用值域漫游，当piecewise时有效，值域显示为线性渐变
+                bottom: 15
+            },
+            data: data
+        });
+    </script>
+</body>
+
+</html>
