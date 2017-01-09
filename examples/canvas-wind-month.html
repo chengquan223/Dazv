@@ -41,7 +41,7 @@
                 wind: []
             };
             for (var j = 0; j < winds.length; j++) {
-                var wind = [winds[j], Math.random() * 0.4];
+                var wind = [winds[j], Math.random() * 6];
                 item.wind.push(wind);
             }
             data.push(item);
@@ -58,7 +58,8 @@
                 type: 'continuous', //continuous,piecewise 连续,分段
                 itemSymbol: 'circle', //circle,rect,roundRect
                 calculable: true, //是否启用值域漫游，当piecewise时有效，值域显示为线性渐变
-                bottom: 15
+                bottom: 15,
+                max: 10
             },
             data: data
         });
