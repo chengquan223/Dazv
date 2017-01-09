@@ -1116,7 +1116,7 @@
                     // addMask(grid);
                     addBorder(grid);
                     if (toolTip.isShow) {
-                        var content = '月份 : ' + grid.date + '<br>风向 : ' + grid.direction + '<br><span style="display:inline-block;margin-right:5px;border-radius:10px;width:9px;height:9px;background-color:' + grid.color + ';"></span>' + grid.value.toFixed(2);
+                        var content = '月份 : ' + grid.date + '<br>风向 : ' + grid.direction + '<br><span style="display:inline-block;margin-right:5px;border-radius:10px;width:9px;height:9px;background-color:' + grid.color + ';"></span>' + grid.value.toFixed(2) + 'm/s';
                         toolTip.setContent(content);
                         toolTip.setPosition(grid.x, grid.y);
                         toolTip.show();
