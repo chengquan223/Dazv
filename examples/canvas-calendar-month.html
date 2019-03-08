@@ -17,7 +17,7 @@
             font-family: 'Helvetica Neue', 'Helvetica', tahoma, 'Hiragino Sans GB', 'PingFang SC', 'STHeitiSC-Light', 'Microsoft YaHei', Arial, sans-serif;
             font-size: 12px;
         }
-        
+
         #container {
             width: 1000px;
             height: 500px;
@@ -32,15 +32,16 @@
     </div>
     <script type="text/javascript" src="../build/calendar.js"></script>
     <script>
+        var year = new Date().getFullYear();
         var data = {
-            year: 2016,
+            year: year,
             days: []
         };
         for (var i = 1; i <= 12; i++) {
-            var date = new Date(2016, i, 0);
+            var date = new Date(year, i, 0);
             for (var j = 1; j <= date.getDate(); j++) {
                 var day = {
-                    date: '2016-' + i + '-' + j,
+                    date: year + '-' + i + '-' + j,
                     value: j == Math.floor(Math.random() * 31) ? -5 : Math.ceil(Math.random() * 170)
                 };
                 data.days.push(day);
