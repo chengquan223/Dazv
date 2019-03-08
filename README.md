@@ -7,11 +7,15 @@
 
 * [日历热力图-年度](https://chengquan223.github.io/dazv/examples/canvas-calendar-year.html)
 * [日历热力图-月度](https://chengquan223.github.io/dazv/examples/canvas-calendar-month.html)
+* [日历风力图-月度](https://chengquan223.github.io/dazv/examples/canvas-wind-month.html)
 
 ## 示例
-<a href="https://github.com/chengquan223">
+<a href="https://github.com/chengquan223/dazv">
     <img style="vertical-align: top;" src="./asset/canvas-calendar-year.png?raw=true" alt="logo">
 </a>
-<a href="https://github.com/chengquan223">
+<a href="https://github.com/chengquan223/dazv">
     <img style="vertical-align: top;" src="./asset/canvas-calendar-month.png?raw=true" alt="logo">
+</a>
+<a href="https://github.com/chengquan223/dazv">
+    <img style="vertical-align: top;" src="./asset/canvas-wind-month.png?raw=true" alt="logo">
 </a>
